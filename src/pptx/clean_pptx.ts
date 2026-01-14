@@ -25,12 +25,12 @@ export async function createCleanPptx(
 
 function cleanSlideXml(xml: string): string {
   const doc = new DOMParser().parseFromString(xml, "text/xml");
-  const pics = Array.from(doc.getElementsByTagName("p:pic"));
+  const pics = Array.from(doc.getElementsByTagName("p:pic")) as any[];
   for (const node of pics) {
     node.parentNode?.removeChild(node);
   }
 
-  const shapes = Array.from(doc.getElementsByTagName("p:sp"));
+  const shapes = Array.from(doc.getElementsByTagName("p:sp")) as any[];
   for (const sp of shapes) {
     const hasTextBody = sp.getElementsByTagName("p:txBody").length > 0;
     if (hasTextBody) {
