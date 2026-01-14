@@ -23,7 +23,7 @@ export async function readXml<T>(zip: JSZip, zipPath: string): Promise<T> {
   if (!file) {
     throw new Error(`Missing file in pptx: ${zipPath}`);
   }
-  const xml = await file.async("text");
+  const xml = await file.async("string");
   return parser.parse(xml) as T;
 }
 

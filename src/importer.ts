@@ -1,9 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import os from "node:os";
 import { readPptx, readXml, listSlidePaths, getSlideRelsPath } from "./pptx/read";
 import { parseSlide, emuToPx } from "./pptx/parse_slide";
 import { renderBackgrounds } from "./render/backgrounds";
 import { DocJson } from "./types";
+import { createCleanPptx } from "./pptx/clean_pptx";
 
 type PresentationXml = {
   "p:presentation"?: {
@@ -89,7 +91,23 @@ async function main() {
       slides,
     };
 
-    await renderBackgrounds(input, outDir);
+    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "pptx-import-clean-"));
+    const cleanedPptxPath = path.join(tmpDir, "cleaned.pptx");
+    let backgroundPptxPath = input;
+    try {
+      await createCleanPptx(archive.zip, slidePaths, cleanedPptxPath);
+      backgroundPptxPath = cleanedPptxPath;
+    } catch (cleanError) {
+      const message =
+        cleanError instanceof Error
+          ? cleanError.message
+          : "Unknown error";
+      console.warn(
+        `Warning: failed to create cleaned PPTX, falling back to original. ${message}`,
+      );
+    }
+
+    await renderBackgrounds(backgroundPptxPath, outDir);
 
     await fs.writeFile(
       path.join(outDir, "doc.json"),

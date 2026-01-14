@@ -19,6 +19,12 @@ brew install libreoffice poppler
 sudo apt-get install libreoffice poppler-utils
 ```
 
+If the binaries are not on your PATH, add them manually (example for Windows PowerShell):
+
+```powershell
+$env:Path += ";C:\\Program Files\\LibreOffice\\program"
+```
+
 ## Install
 
 ```bash
