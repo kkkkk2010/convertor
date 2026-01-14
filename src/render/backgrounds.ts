@@ -10,8 +10,9 @@ export async function renderBackgrounds(
   inputPptx: string,
   outDir: string,
 ): Promise<void> {
-  await ensureBinary("libreoffice", [
-    "Install LibreOffice (libreoffice) and ensure it is on PATH.",
+  const libreOfficeBinary = getLibreOfficeBinary();
+  await ensureBinary(libreOfficeBinary, [
+    "Install LibreOffice and ensure it is on PATH.",
   ]);
   await ensureBinary("pdftoppm", [
     "Install poppler-utils (pdftoppm) and ensure it is on PATH.",
@@ -25,7 +26,7 @@ export async function renderBackgrounds(
   const pdfName = pptxName.replace(/\.pptx$/i, ".pdf");
   const pdfPath = path.join(tmpDir, pdfName);
 
-  await execFileAsync("libreoffice", [
+  await execFileAsync(libreOfficeBinary, [
     "--headless",
     "--convert-to",
     "pdf",
@@ -43,6 +44,10 @@ export async function renderBackgrounds(
   ]);
 
   await normalizeBackgroundNames(backgroundsDir);
+}
+
+function getLibreOfficeBinary(): string {
+  return os.platform() === "win32" ? "soffice" : "libreoffice";
 }
 
 async function ensureBinary(command: string, hints: string[]): Promise<void> {
