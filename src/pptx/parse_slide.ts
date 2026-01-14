@@ -137,11 +137,13 @@ function ensureArray<T>(value: T | T[] | undefined): T[] {
 }
 
 function extractText(textBody: Record<string, unknown>): string {
-  const paragraphs = ensureArray(textBody["a:p"]);
+  const body = textBody as Record<string, any>;
+  const paragraphs = ensureArray(body["a:p"]);
   const chunks = paragraphs.map((paragraph) => {
-    const runs = ensureArray(paragraph?.["a:r"]);
+    const p = paragraph as Record<string, any> | undefined;
+    const runs = ensureArray(p?.["a:r"]);
     const textRuns = runs
-      .map((run) => run?.["a:t"])
+      .map((run) => (run as Record<string, any> | undefined)?.["a:t"])
       .filter((value) => typeof value === "string") as string[];
     return textRuns.join("");
   });
