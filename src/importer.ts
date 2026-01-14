@@ -68,6 +68,7 @@ async function main() {
           const data = await file.async("nodebuffer");
           return Buffer.from(data);
         },
+        zipFileExists: (zipPath: string) => Boolean(archive.zip.file(zipPath)),
         imagesDir: assetsDir,
         originalsDir,
       });

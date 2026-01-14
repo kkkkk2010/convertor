@@ -51,6 +51,7 @@ type ParseSlideOptions = {
   slideIndex: number;
   rels: RelsXml | null;
   zipReadFile: (zipPath: string) => Promise<Buffer>;
+  zipFileExists: (zipPath: string) => boolean;
   imagesDir: string;
   originalsDir: string;
 };
@@ -116,11 +117,19 @@ export async function parseSlide(
     if (!target) {
       continue;
     }
-    const normalizedTarget = normalizeTargetPath(target);
-    const extension =
+    let normalizedTarget = normalizeTargetPath(target);
+    let extension =
       path.posix.extname(normalizedTarget).toLowerCase() || ".png";
     const imageBaseName = `slide-${options.slideIndex}-img-${imageCount}`;
-    const data = await options.zipReadFile(normalizedTarget);
+    let data = await options.zipReadFile(normalizedTarget);
+    if (extension === ".png" && data.length < 2000) {
+      const svgTarget = findSvgAlternative(normalizedTarget, options.zipFileExists);
+      if (svgTarget) {
+        normalizedTarget = svgTarget;
+        extension = ".svg";
+        data = await options.zipReadFile(normalizedTarget);
+      }
+    }
     const { src } = await saveImageAsset({
       extension,
       data,
@@ -181,6 +190,29 @@ function normalizeTargetPath(target: string): string {
     return normalized;
   }
   return path.posix.join("ppt", normalized);
+}
+
+function findSvgAlternative(
+  pngTarget: string,
+  fileExists: (zipPath: string) => boolean,
+): string | null {
+  const ext = path.posix.extname(pngTarget).toLowerCase();
+  if (ext !== ".png") {
+    return null;
+  }
+  const base = pngTarget.slice(0, -ext.length);
+  const match = base.match(/^(.*)-\d+$/);
+  if (match) {
+    const candidate = `${match[1]}-3.svg`;
+    if (fileExists(candidate)) {
+      return candidate;
+    }
+  }
+  const direct = `${base}.svg`;
+  if (fileExists(direct)) {
+    return direct;
+  }
+  return null;
 }
 
 type SaveImageOptions = {
