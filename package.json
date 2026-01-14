@@ -9,7 +9,7 @@
     "start": "node dist/importer.js"
   },
   "dependencies": {
-    "@xmldom/xmldom": "^0.8.10",
+    "@xmldom/xmldom": "^0.8.11",
     "fast-xml-parser": "^4.3.5",
     "jszip": "^3.10.1"
   },
