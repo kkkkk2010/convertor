@@ -55,7 +55,7 @@ export async function renderBackgrounds(
   await normalizeBackgroundNames(backgroundsDir);
 }
 
-function resolveLibreOfficeBinary(): string | null {
+export function resolveLibreOfficeBinary(): string | null {
   const candidates = getLibreOfficeCandidates();
   for (const candidate of candidates) {
     if (isBinaryAvailable(candidate)) {
@@ -65,7 +65,7 @@ function resolveLibreOfficeBinary(): string | null {
   return null;
 }
 
-function getLibreOfficeCandidates(): string[] {
+export function getLibreOfficeCandidates(): string[] {
   if (os.platform() !== "win32") {
     return ["libreoffice"];
   }
@@ -88,7 +88,7 @@ async function ensureBinary(command: string, hints: string[]): Promise<void> {
   throw new Error(`Missing dependency: ${command}.\n${hintText}`);
 }
 
-function isBinaryAvailable(command: string): boolean {
+export function isBinaryAvailable(command: string): boolean {
   const result = spawnSync(command, ["--version"], { stdio: "ignore" });
   return result.error == null;
 }

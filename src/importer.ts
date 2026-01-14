@@ -38,7 +38,9 @@ async function main() {
     const slideSize = extractSlideSize(presentation);
 
     const assetsDir = path.join(outDir, "assets/images");
+    const originalsDir = path.join(outDir, "assets/original");
     await fs.mkdir(assetsDir, { recursive: true });
+    await fs.mkdir(originalsDir, { recursive: true });
 
     console.log(`Slides found: ${slidePaths.length}`);
 
@@ -67,6 +69,7 @@ async function main() {
           return Buffer.from(data);
         },
         imagesDir: assetsDir,
+        originalsDir,
       });
 
       const textCount = elements.filter((el) => el.type === "text").length;

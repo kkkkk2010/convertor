@@ -1,6 +1,15 @@
 import path from "node:path";
 import fs from "node:fs/promises";
+import os from "node:os";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { ImageElement, SlideElement, TextElement } from "../types";
+import {
+  getLibreOfficeCandidates,
+  resolveLibreOfficeBinary,
+} from "../render/backgrounds";
+
+const execFileAsync = promisify(execFile);
 
 const EMU_PER_INCH = 914400;
 
@@ -43,6 +52,7 @@ type ParseSlideOptions = {
   rels: RelsXml | null;
   zipReadFile: (zipPath: string) => Promise<Buffer>;
   imagesDir: string;
+  originalsDir: string;
 };
 
 type AnyRecord = Record<string, any>;
@@ -107,11 +117,17 @@ export async function parseSlide(
       continue;
     }
     const normalizedTarget = normalizeTargetPath(target);
-    const extension = path.posix.extname(normalizedTarget) || ".png";
-    const imageName = `slide-${options.slideIndex}-img-${imageCount}${extension}`;
-    const imagePath = path.join(options.imagesDir, imageName);
+    const extension =
+      path.posix.extname(normalizedTarget).toLowerCase() || ".png";
+    const imageBaseName = `slide-${options.slideIndex}-img-${imageCount}`;
     const data = await options.zipReadFile(normalizedTarget);
-    await fs.writeFile(imagePath, data);
+    const { src } = await saveImageAsset({
+      extension,
+      data,
+      imageBaseName,
+      imagesDir: options.imagesDir,
+      originalsDir: options.originalsDir,
+    });
     const element: ImageElement = {
       id: `i${imageCount}`,
       type: "image",
@@ -120,7 +136,7 @@ export async function parseSlide(
       width: emuToPx(Number(ext?.["@_cx"] ?? 0)),
       height: emuToPx(Number(ext?.["@_cy"] ?? 0)),
       rotation,
-      src: path.posix.join("assets/images", imageName),
+      src,
       objectFit: "cover",
     };
     elements.push(element);
@@ -165,4 +181,61 @@ function normalizeTargetPath(target: string): string {
     return normalized;
   }
   return path.posix.join("ppt", normalized);
+}
+
+type SaveImageOptions = {
+  extension: string;
+  data: Buffer;
+  imageBaseName: string;
+  imagesDir: string;
+  originalsDir: string;
+};
+
+async function saveImageAsset(options: SaveImageOptions): Promise<{ src: string }> {
+  const { extension, data, imageBaseName, imagesDir, originalsDir } = options;
+
+  if (extension === ".svg") {
+    const imageName = `${imageBaseName}${extension}`;
+    const imagePath = path.join(imagesDir, imageName);
+    await fs.writeFile(imagePath, data);
+    return { src: path.posix.join("assets/images", imageName) };
+  }
+
+  if (extension === ".emf" || extension === ".wmf") {
+    const originalName = `${imageBaseName}${extension}`;
+    const originalPath = path.join(originalsDir, originalName);
+    await fs.writeFile(originalPath, data);
+    const rasterName = `${imageBaseName}.png`;
+    await rasterizeVector(originalPath, imagesDir);
+    return { src: path.posix.join("assets/images", rasterName) };
+  }
+
+  const imageName = `${imageBaseName}${extension}`;
+  const imagePath = path.join(imagesDir, imageName);
+  await fs.writeFile(imagePath, data);
+  return { src: path.posix.join("assets/images", imageName) };
+}
+
+async function rasterizeVector(inputPath: string, outDir: string): Promise<void> {
+  const libreOfficeBinary = resolveLibreOfficeBinary();
+  if (!libreOfficeBinary) {
+    const candidates = getLibreOfficeCandidates();
+    throw new Error(
+      `Missing dependency: LibreOffice.\n- Install LibreOffice and ensure it is on PATH.\n- Tried: ${candidates.join(", ")}`,
+    );
+  }
+
+  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "pptx-vector-"));
+  await execFileAsync(libreOfficeBinary, [
+    "--headless",
+    "--convert-to",
+    "png",
+    "--outdir",
+    tmpDir,
+    inputPath,
+  ]);
+
+  const baseName = path.basename(inputPath, path.extname(inputPath));
+  const renderedPath = path.join(tmpDir, `${baseName}.png`);
+  await fs.rename(renderedPath, path.join(outDir, `${baseName}.png`));
 }
