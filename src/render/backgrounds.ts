@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { execFile } from "node:child_process";
+import { execFile, spawnSync } from "node:child_process";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
@@ -10,10 +10,19 @@ export async function renderBackgrounds(
   inputPptx: string,
   outDir: string,
 ): Promise<void> {
-  const libreOfficeBinary = getLibreOfficeBinary();
-  await ensureBinary(libreOfficeBinary, [
-    "Install LibreOffice and ensure it is on PATH.",
-  ]);
+  const libreOfficeBinary = resolveLibreOfficeBinary();
+  if (!libreOfficeBinary) {
+    const candidates = getLibreOfficeCandidates();
+    const hintText = [
+      "Install LibreOffice and ensure it is on PATH.",
+      `Tried: ${candidates.join(", ")}`,
+    ];
+    throw new Error(
+      `Missing dependency: LibreOffice.\n${hintText
+        .map((hint) => `- ${hint}`)
+        .join("\n")}`,
+    );
+  }
   await ensureBinary("pdftoppm", [
     "Install poppler-utils (pdftoppm) and ensure it is on PATH.",
   ]);
@@ -46,19 +55,42 @@ export async function renderBackgrounds(
   await normalizeBackgroundNames(backgroundsDir);
 }
 
-function getLibreOfficeBinary(): string {
-  return os.platform() === "win32" ? "soffice" : "libreoffice";
+function resolveLibreOfficeBinary(): string | null {
+  const candidates = getLibreOfficeCandidates();
+  for (const candidate of candidates) {
+    if (isBinaryAvailable(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+function getLibreOfficeCandidates(): string[] {
+  if (os.platform() !== "win32") {
+    return ["libreoffice"];
+  }
+  return [
+    "soffice",
+    "soffice.com",
+    "soffice.exe",
+    "C:\\Program Files\\LibreOffice\\program\\soffice.exe",
+    "C:\\Program Files\\LibreOffice\\program\\soffice.com",
+    "C:\\Program Files (x86)\\LibreOffice\\program\\soffice.exe",
+    "C:\\Program Files (x86)\\LibreOffice\\program\\soffice.com",
+  ];
 }
 
 async function ensureBinary(command: string, hints: string[]): Promise<void> {
-  try {
-    await execFileAsync("which", [command]);
-  } catch {
-    const hintText = hints.map((hint) => `- ${hint}`).join("\n");
-    throw new Error(
-      `Missing dependency: ${command}.\n${hintText}`,
-    );
+  if (isBinaryAvailable(command)) {
+    return;
   }
+  const hintText = hints.map((hint) => `- ${hint}`).join("\n");
+  throw new Error(`Missing dependency: ${command}.\n${hintText}`);
+}
+
+function isBinaryAvailable(command: string): boolean {
+  const result = spawnSync(command, ["--version"], { stdio: "ignore" });
+  return result.error == null;
 }
 
 async function normalizeBackgroundNames(backgroundsDir: string): Promise<void> {
