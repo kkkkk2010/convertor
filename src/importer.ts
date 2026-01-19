@@ -249,8 +249,8 @@ async function buildZip(sourceDir: string, outZipPath: string): Promise<number> 
 
   await new Promise<void>((resolve, reject) => {
     output.on("close", () => resolve());
-    output.on("error", (error) => reject(error));
-    archive.on("error", (error) => reject(error));
+    output.on("error", (error: Error) => reject(error));
+    archive.on("error", (error: Error) => reject(error));
     void archive.finalize();
   });
 
