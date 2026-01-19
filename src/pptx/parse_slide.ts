@@ -1,6 +1,15 @@
 import path from "node:path";
 import fs from "node:fs/promises";
 import { ImageElement, SlideElement, TextElement } from "../types";
+import {
+  ThemeColorMap,
+  resolveBooleanAttr,
+  resolveColor,
+  resolveFontFamily,
+  resolveFontSize,
+  resolveParagraphProps,
+  resolveUnderline,
+} from "./theme";
 
 const EMU_PER_INCH = 914400;
 
@@ -44,6 +53,7 @@ type ParseSlideOptions = {
   zipReadFile: (zipPath: string) => Promise<Buffer>;
   zipFileExists: (zipPath: string) => boolean;
   imagesDir: string;
+  theme: ThemeColorMap;
 };
 
 type AnyRecord = Record<string, any>;
@@ -51,13 +61,22 @@ type AnyRecord = Record<string, any>;
 export async function parseSlide(
   slideXml: SlideXml,
   options: ParseSlideOptions,
-): Promise<SlideElement[]> {
+): Promise<{
+  elements: SlideElement[];
+  stats: {
+    textElements: number;
+    schemeClrElements: number;
+    multistyleElements: number;
+  };
+}> {
   const spTree = slideXml["p:sld"]?.["p:cSld"]?.["p:spTree"] as AnyRecord | undefined;
   const shapes = ensureArray(spTree?.["p:sp"]) as AnyRecord[];
   const pics = ensureArray(spTree?.["p:pic"]) as AnyRecord[];
   const elements: SlideElement[] = [];
 
   let textCount = 0;
+  let schemeClrCount = 0;
+  let multistyleCount = 0;
   for (const shape of shapes) {
     const textBody = shape?.["p:txBody"];
     if (!textBody) {
@@ -68,7 +87,19 @@ export async function parseSlide(
     const off = xfrm?.["a:off"];
     const ext = xfrm?.["a:ext"];
     const rotation = ooxmlRotToDeg(Number(xfrm?.["@_rot"]));
-    const text = extractText(textBody);
+    const { text, style, schemeClrUsed, multistyle } = extractTextAndStyle(
+      textBody,
+      options.theme,
+    );
+    if (schemeClrUsed) {
+      schemeClrCount += 1;
+    }
+    if (multistyle) {
+      multistyleCount += 1;
+      console.warn(
+        `MULTISTYLE slide ${options.slideIndex} text t${textCount} using base`,
+      );
+    }
     const element: TextElement = {
       id: `t${textCount}`,
       type: "text",
@@ -78,15 +109,7 @@ export async function parseSlide(
       height: emuToPx(Number(ext?.["@_cy"] ?? 0)),
       rotation,
       text,
-      style: {
-        fontFamily: "Arial",
-        fontSize: 28,
-        color: "#111111",
-        bold: false,
-        italic: false,
-        underline: false,
-        align: "left",
-      },
+      style,
     };
     elements.push(element);
   }
@@ -140,7 +163,14 @@ export async function parseSlide(
     elements.push(element);
   }
 
-  return elements;
+  return {
+    elements,
+    stats: {
+      textElements: textCount,
+      schemeClrElements: schemeClrCount,
+      multistyleElements: multistyleCount,
+    },
+  };
 }
 
 function ensureArray<T>(value: T | T[] | undefined): T[] {
@@ -150,7 +180,15 @@ function ensureArray<T>(value: T | T[] | undefined): T[] {
   return Array.isArray(value) ? value : [value];
 }
 
-function extractText(textBody: Record<string, unknown>): string {
+function extractTextAndStyle(
+  textBody: Record<string, unknown>,
+  theme: ThemeColorMap,
+): {
+  text: string;
+  style: TextElement["style"];
+  schemeClrUsed: boolean;
+  multistyle: boolean;
+} {
   const body = textBody as Record<string, any>;
   const paragraphs = ensureArray(body["a:p"]);
   const chunks = paragraphs.map((paragraph) => {
@@ -161,7 +199,114 @@ function extractText(textBody: Record<string, unknown>): string {
       .filter((value) => typeof value === "string") as string[];
     return textRuns.join("");
   });
-  return chunks.join("\n").trim();
+  const text = chunks.join("\n").trim();
+
+  let baseRun: {
+    rPr: AnyRecord | undefined;
+    defRPr: AnyRecord | undefined;
+    pPr: AnyRecord | undefined;
+  } | null = null;
+  let firstRun: {
+    rPr: AnyRecord | undefined;
+    defRPr: AnyRecord | undefined;
+    pPr: AnyRecord | undefined;
+  } | null = null;
+  const runStyles: RunStyle[] = [];
+
+  for (const paragraph of paragraphs) {
+    const p = paragraph as Record<string, any> | undefined;
+    const pPr = p?.["a:pPr"] as AnyRecord | undefined;
+    const defRPr = pPr?.["a:defRPr"] as AnyRecord | undefined;
+    const runs = ensureArray(p?.["a:r"]);
+    for (const run of runs) {
+      const r = run as AnyRecord | undefined;
+      const rPr = r?.["a:rPr"] as AnyRecord | undefined;
+      const hasRPr = Boolean(rPr && Object.keys(rPr).length > 0);
+      if (!firstRun) {
+        firstRun = { rPr, defRPr, pPr };
+      }
+      if (!baseRun && hasRPr) {
+        baseRun = { rPr, defRPr, pPr };
+      }
+      const style = resolveRunStyle(rPr, defRPr, theme);
+      runStyles.push(style);
+    }
+  }
+
+  const resolvedBase = baseRun ?? firstRun;
+  const baseStyle = resolveRunStyle(
+    resolvedBase?.rPr,
+    resolvedBase?.defRPr,
+    theme,
+  );
+  const { align, lineHeight } = resolveParagraphProps(
+    resolvedBase?.pPr,
+    baseStyle.fontSizePt,
+  );
+  const style: TextElement["style"] = {
+    fontFamily: baseStyle.fontFamily,
+    fontSizePt: baseStyle.fontSizePt,
+    color: baseStyle.color,
+    bold: baseStyle.bold,
+    italic: baseStyle.italic,
+    underline: baseStyle.underline,
+    align,
+    lineHeight,
+  };
+
+  const multistyle = runStyles.some((runStyle) =>
+    isStyleDifferent(runStyle, baseStyle),
+  );
+
+  return {
+    text,
+    style,
+    schemeClrUsed: baseStyle.usedScheme,
+    multistyle,
+  };
+}
+
+type RunStyle = {
+  fontFamily: string;
+  fontSizePt: number;
+  color: string;
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  usedScheme: boolean;
+};
+
+function resolveRunStyle(
+  rPr: AnyRecord | undefined,
+  defRPr: AnyRecord | undefined,
+  theme: ThemeColorMap,
+): RunStyle {
+  const fontSizePt = resolveFontSize(rPr, defRPr) ?? 28;
+  const fontFamily = resolveFontFamily(rPr, defRPr) ?? "Arial";
+  const bold = resolveBooleanAttr(rPr, defRPr, "@_b");
+  const italic = resolveBooleanAttr(rPr, defRPr, "@_i");
+  const underline = resolveUnderline(rPr, defRPr);
+  const { color, usedScheme } = resolveColor(rPr, defRPr, theme);
+  return {
+    fontFamily,
+    fontSizePt,
+    color,
+    bold,
+    italic,
+    underline,
+    usedScheme,
+  };
+}
+
+function isStyleDifferent(a: RunStyle, b: RunStyle): boolean {
+  return (
+    a.fontFamily !== b.fontFamily ||
+    a.fontSizePt !== b.fontSizePt ||
+    a.color !== b.color ||
+    a.bold !== b.bold ||
+    a.italic !== b.italic ||
+    a.underline !== b.underline
+  );
 }
 
 function resolveRelationship(rels: RelsXml | null, id: string): string | null {

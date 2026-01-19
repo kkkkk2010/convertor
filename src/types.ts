@@ -30,12 +30,13 @@ export type TextElement = {
   text: string;
   style: {
     fontFamily: string;
-    fontSize: number;
+    fontSizePt: number;
     color: string;
     bold: boolean;
     italic: boolean;
     underline: boolean;
     align: "left" | "center" | "right" | "justify";
+    lineHeight: number | null;
   };
 };
 

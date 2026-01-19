@@ -6,6 +6,7 @@ import { parseSlide, emuToPx } from "./pptx/parse_slide";
 import { renderBackgrounds } from "./render/backgrounds";
 import { DocJson } from "./types";
 import { createCleanPptx } from "./pptx/clean_pptx";
+import { ThemeColorMap, parseThemeColors } from "./pptx/theme";
 
 type PresentationXml = {
   "p:presentation"?: {
@@ -31,6 +32,17 @@ async function main() {
       throw new Error("No slides found in PPTX.");
     }
 
+    let themeColors: ThemeColorMap = {};
+    try {
+      const themeXml = await readXml<Record<string, unknown>>(
+        archive.zip,
+        "ppt/theme/theme1.xml",
+      );
+      themeColors = parseThemeColors(themeXml);
+    } catch {
+      themeColors = {};
+    }
+
     const presentation = await readXml<PresentationXml>(
       archive.zip,
       "ppt/presentation.xml",
@@ -42,6 +54,9 @@ async function main() {
 
     console.log(`Slides found: ${slidePaths.length}`);
 
+    let totalTextElements = 0;
+    let totalSchemeClr = 0;
+    let totalMultistyle = 0;
     const slides = [];
     for (let i = 0; i < slidePaths.length; i += 1) {
       const slidePath = slidePaths[i];
@@ -55,7 +70,7 @@ async function main() {
         relsXml = null;
       }
 
-      const elements = await parseSlide(slideXml, {
+      const { elements, stats } = await parseSlide(slideXml, {
         slideIndex,
         rels: relsXml as RelsXml,
         zipReadFile: async (zipPath: string) => {
@@ -68,6 +83,7 @@ async function main() {
         },
         zipFileExists: (zipPath: string) => Boolean(archive.zip.file(zipPath)),
         imagesDir: assetsDir,
+        theme: themeColors,
       });
 
       const textCount = elements.filter((el) => el.type === "text").length;
@@ -75,6 +91,10 @@ async function main() {
       console.log(
         `Slide ${slideIndex}: ${textCount} text, ${imageCount} images`,
       );
+
+      totalTextElements += stats.textElements;
+      totalSchemeClr += stats.schemeClrElements;
+      totalMultistyle += stats.multistyleElements;
 
       slides.push({
         id: `s${slideIndex}`,
@@ -91,6 +111,10 @@ async function main() {
       slideSize,
       slides,
     };
+
+    console.log(`Text elements: ${totalTextElements}`);
+    console.log(`Text elements with schemeClr: ${totalSchemeClr}`);
+    console.log(`MULTISTYLE: ${totalMultistyle}`);
 
     const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "pptx-import-clean-"));
     const cleanedPptxPath = path.join(tmpDir, "cleaned.pptx");
