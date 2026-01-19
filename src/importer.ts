@@ -7,6 +7,7 @@ import { renderBackgrounds } from "./render/backgrounds";
 import { DocJson } from "./types";
 import { createCleanPptx } from "./pptx/clean_pptx";
 import { ThemeColorMap, parseThemeColors } from "./pptx/theme";
+import JSZip from "jszip";
 
 type PresentationXml = {
   "p:presentation"?: {
@@ -24,7 +25,8 @@ async function main() {
   try {
     const { input, outDir } = parseArgs(process.argv.slice(2));
     await ensureInput(input);
-    await fs.mkdir(outDir, { recursive: true });
+    const outZipPath = await resolveOutZipPath(outDir);
+    const tempOutDir = await fs.mkdtemp(path.join(os.tmpdir(), "pptx-import-out-"));
 
     const archive = await readPptx(input);
     const slidePaths = listSlidePaths(archive.zip);
@@ -49,7 +51,7 @@ async function main() {
     );
     const slideSize = extractSlideSize(presentation);
 
-    const assetsDir = path.join(outDir, "assets/images");
+    const assetsDir = path.join(tempOutDir, "assets/images");
     await fs.mkdir(assetsDir, { recursive: true });
 
     console.log(`Slides found: ${slidePaths.length}`);
@@ -57,6 +59,7 @@ async function main() {
     let totalTextElements = 0;
     let totalSchemeClr = 0;
     let totalMultistyle = 0;
+    let totalImages = 0;
     const slides = [];
     for (let i = 0; i < slidePaths.length; i += 1) {
       const slidePath = slidePaths[i];
@@ -95,6 +98,7 @@ async function main() {
       totalTextElements += stats.textElements;
       totalSchemeClr += stats.schemeClrElements;
       totalMultistyle += stats.multistyleElements;
+      totalImages += stats.imageElements;
 
       slides.push({
         id: `s${slideIndex}`,
@@ -132,12 +136,19 @@ async function main() {
       );
     }
 
-    await renderBackgrounds(backgroundPptxPath, outDir);
+    await renderBackgrounds(backgroundPptxPath, tempOutDir);
 
     await fs.writeFile(
-      path.join(outDir, "doc.json"),
+      path.join(tempOutDir, "doc.json"),
       JSON.stringify(doc, null, 2),
       "utf-8",
+    );
+
+    await buildZip(tempOutDir, outZipPath);
+    await fs.rm(tempOutDir, { recursive: true, force: true });
+    await fs.rm(tmpDir, { recursive: true, force: true });
+    console.log(
+      `✔ Exported presentation to ${path.basename(outZipPath)} (${slidePaths.length} slides, ${totalImages} images)`,
     );
   } catch (error) {
     const message =
@@ -161,7 +172,7 @@ function parseArgs(argv: string[]): { input: string; outDir: string } {
   const outDir = args.get("--out");
   if (!input || !outDir) {
     throw new Error(
-      "Usage: node dist/importer.js --input <path/to/input.pptx> --out <path/to/outDir>",
+      "Usage: node dist/importer.js --input <path/to/input.pptx> --out <path/to/out.zip>",
     );
   }
   return { input, outDir };
@@ -176,6 +187,24 @@ async function ensureInput(inputPath: string): Promise<void> {
   } catch {
     throw new Error(`Input file not found: ${inputPath}`);
   }
+}
+
+async function resolveOutZipPath(outPath: string): Promise<string> {
+  const hasZipExt = path.extname(outPath).toLowerCase() === ".zip";
+  if (hasZipExt) {
+    await fs.mkdir(path.dirname(outPath), { recursive: true });
+    return outPath;
+  }
+  try {
+    const stat = await fs.stat(outPath);
+    if (stat.isDirectory()) {
+      return path.join(outPath, "out.zip");
+    }
+  } catch {
+    await fs.mkdir(outPath, { recursive: true });
+    return path.join(outPath, "out.zip");
+  }
+  return `${outPath}.zip`;
 }
 
 function extractSlideSize(presentation: PresentationXml): DocJson["slideSize"] {
@@ -194,6 +223,31 @@ function extractSlideSize(presentation: PresentationXml): DocJson["slideSize"] {
     height: Number((heightPx / 96).toFixed(3)),
     unit: "in",
   };
+}
+
+async function buildZip(sourceDir: string, outZipPath: string): Promise<void> {
+  const zip = new JSZip();
+  await addDirectoryToZip(zip, sourceDir, "");
+  const content = await zip.generateAsync({ type: "nodebuffer" });
+  await fs.writeFile(outZipPath, content);
+}
+
+async function addDirectoryToZip(
+  zip: JSZip,
+  dirPath: string,
+  prefix: string,
+): Promise<void> {
+  const entries = await fs.readdir(dirPath, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+    const zipPath = path.posix.join(prefix, entry.name);
+    if (entry.isDirectory()) {
+      await addDirectoryToZip(zip, fullPath, zipPath);
+    } else if (entry.isFile()) {
+      const data = await fs.readFile(fullPath);
+      zip.file(zipPath, data);
+    }
+  }
 }
 
 void main();

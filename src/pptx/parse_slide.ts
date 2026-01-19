@@ -67,6 +67,7 @@ export async function parseSlide(
     textElements: number;
     schemeClrElements: number;
     multistyleElements: number;
+    imageElements: number;
   };
 }> {
   const spTree = slideXml["p:sld"]?.["p:cSld"]?.["p:spTree"] as AnyRecord | undefined;
@@ -169,6 +170,7 @@ export async function parseSlide(
       textElements: textCount,
       schemeClrElements: schemeClrCount,
       multistyleElements: multistyleCount,
+      imageElements: imageCount,
     },
   };
 }
