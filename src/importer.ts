@@ -1,4 +1,5 @@
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { readPptx, readXml, listSlidePaths, getSlideRelsPath } from "./pptx/read";
@@ -7,7 +8,7 @@ import { renderBackgrounds } from "./render/backgrounds";
 import { DocJson } from "./types";
 import { createCleanPptx } from "./pptx/clean_pptx";
 import { ThemeColorMap, parseThemeColors } from "./pptx/theme";
-import JSZip from "jszip";
+import archiver from "archiver";
 
 type PresentationXml = {
   "p:presentation"?: {
@@ -23,10 +24,36 @@ type RelsXml = Record<string, unknown>;
 
 async function main() {
   try {
-    const { input, outDir } = parseArgs(process.argv.slice(2));
+    const { input, outRaw } = parseArgs(process.argv.slice(2));
     await ensureInput(input);
-    const outZipPath = await resolveOutZipPath(outDir);
-    const tempOutDir = await fs.mkdtemp(path.join(os.tmpdir(), "pptx-import-out-"));
+    const outIsZip = outRaw.toLowerCase().endsWith(".zip");
+    const outZipPath = outIsZip
+      ? path.resolve(outRaw)
+      : path.join(path.resolve(outRaw), "out.zip");
+    const outDir = outIsZip
+      ? path.dirname(outZipPath)
+      : path.resolve(outRaw);
+
+    console.log(`outDir: ${outDir}`);
+    console.log(`outZipPath: ${outZipPath}`);
+    console.log(`outIsZip: ${outIsZip}`);
+
+    await fs.mkdir(outDir, { recursive: true });
+    if (fsSync.existsSync(outZipPath)) {
+      const stat = fsSync.statSync(outZipPath);
+      if (stat.isDirectory()) {
+        throw new Error(
+          `Expected a .zip FILE but path is a DIRECTORY: ${outZipPath}`,
+        );
+      }
+      if (stat.isFile()) {
+        fsSync.unlinkSync(outZipPath);
+      }
+    }
+
+    const tempOutDir = fsSync.mkdtempSync(
+      path.join(os.tmpdir(), "pptx-import-"),
+    );
 
     const archive = await readPptx(input);
     const slidePaths = listSlidePaths(archive.zip);
@@ -144,9 +171,16 @@ async function main() {
       "utf-8",
     );
 
-    await buildZip(tempOutDir, outZipPath);
+    const zipSize = await buildZip(tempOutDir, outZipPath);
+    const zipStat = fsSync.statSync(outZipPath);
+    if (!zipStat.isFile() || zipStat.size <= 1024) {
+      throw new Error(
+        `Expected zip file larger than 1KB, got ${zipStat.size} bytes at ${outZipPath}`,
+      );
+    }
     await fs.rm(tempOutDir, { recursive: true, force: true });
     await fs.rm(tmpDir, { recursive: true, force: true });
+    console.log(`wrote zip file size=${zipSize}`);
     console.log(
       `✔ Exported presentation to ${path.basename(outZipPath)} (${slidePaths.length} slides, ${totalImages} images)`,
     );
@@ -158,7 +192,7 @@ async function main() {
   }
 }
 
-function parseArgs(argv: string[]): { input: string; outDir: string } {
+function parseArgs(argv: string[]): { input: string; outRaw: string } {
   const args = new Map<string, string>();
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -169,13 +203,13 @@ function parseArgs(argv: string[]): { input: string; outDir: string } {
   }
 
   const input = args.get("--input");
-  const outDir = args.get("--out");
-  if (!input || !outDir) {
+  const outRaw = args.get("--out");
+  if (!input || !outRaw) {
     throw new Error(
       "Usage: node dist/importer.js --input <path/to/input.pptx> --out <path/to/out.zip>",
     );
   }
-  return { input, outDir };
+  return { input, outRaw };
 }
 
 async function ensureInput(inputPath: string): Promise<void> {
@@ -187,24 +221,6 @@ async function ensureInput(inputPath: string): Promise<void> {
   } catch {
     throw new Error(`Input file not found: ${inputPath}`);
   }
-}
-
-async function resolveOutZipPath(outPath: string): Promise<string> {
-  const hasZipExt = path.extname(outPath).toLowerCase() === ".zip";
-  if (hasZipExt) {
-    await fs.mkdir(path.dirname(outPath), { recursive: true });
-    return outPath;
-  }
-  try {
-    const stat = await fs.stat(outPath);
-    if (stat.isDirectory()) {
-      return path.join(outPath, "out.zip");
-    }
-  } catch {
-    await fs.mkdir(outPath, { recursive: true });
-    return path.join(outPath, "out.zip");
-  }
-  return `${outPath}.zip`;
 }
 
 function extractSlideSize(presentation: PresentationXml): DocJson["slideSize"] {
@@ -225,29 +241,20 @@ function extractSlideSize(presentation: PresentationXml): DocJson["slideSize"] {
   };
 }
 
-async function buildZip(sourceDir: string, outZipPath: string): Promise<void> {
-  const zip = new JSZip();
-  await addDirectoryToZip(zip, sourceDir, "");
-  const content = await zip.generateAsync({ type: "nodebuffer" });
-  await fs.writeFile(outZipPath, content);
-}
+async function buildZip(sourceDir: string, outZipPath: string): Promise<number> {
+  const output = fsSync.createWriteStream(outZipPath);
+  const archive = archiver("zip", { zlib: { level: 9 } });
+  archive.directory(sourceDir, false);
+  archive.pipe(output);
 
-async function addDirectoryToZip(
-  zip: JSZip,
-  dirPath: string,
-  prefix: string,
-): Promise<void> {
-  const entries = await fs.readdir(dirPath, { withFileTypes: true });
-  for (const entry of entries) {
-    const fullPath = path.join(dirPath, entry.name);
-    const zipPath = path.posix.join(prefix, entry.name);
-    if (entry.isDirectory()) {
-      await addDirectoryToZip(zip, fullPath, zipPath);
-    } else if (entry.isFile()) {
-      const data = await fs.readFile(fullPath);
-      zip.file(zipPath, data);
-    }
-  }
+  await new Promise<void>((resolve, reject) => {
+    output.on("close", () => resolve());
+    output.on("error", (error) => reject(error));
+    archive.on("error", (error) => reject(error));
+    void archive.finalize();
+  });
+
+  return archive.pointer();
 }
 
 void main();
