@@ -136,6 +136,9 @@ export async function parseSlide(
       path.posix.extname(normalizedTarget).toLowerCase() || ".png";
     const imageBaseName = `slide-${options.slideIndex}-img-${imageCount}`;
     let data = await options.zipReadFile(normalizedTarget);
+    if (isSvgData(data)) {
+      extension = ".svg";
+    }
     if (extension === ".png" && data.length < 2000) {
       const svgTarget = findSvgAlternative(normalizedTarget, options.zipFileExists);
       if (svgTarget) {
@@ -143,6 +146,9 @@ export async function parseSlide(
         extension = ".svg";
         data = await options.zipReadFile(normalizedTarget);
       }
+    }
+    if (extension !== ".svg" && isSvgData(data)) {
+      extension = ".svg";
     }
     const { src } = await saveImageAsset({
       extension,
@@ -349,6 +355,20 @@ function findSvgAlternative(
     return direct;
   }
   return null;
+}
+
+function isSvgData(data: Buffer): boolean {
+  const snippet = data
+    .toString("utf8", 0, 1024)
+    .replace(/^\uFEFF/, "")
+    .trimStart();
+  if (snippet.startsWith("<svg")) {
+    return true;
+  }
+  if (snippet.startsWith("<?xml") && snippet.includes("<svg")) {
+    return true;
+  }
+  return false;
 }
 
 type SaveImageOptions = {
