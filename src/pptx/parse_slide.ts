@@ -54,8 +54,7 @@ type ParseSlideOptions = {
   zipFileExists: (zipPath: string) => boolean;
   imagesDir: string;
   theme: ThemeColorMap;
-  svgTargets: Set<string>;
-  debugImages: boolean;
+  debugSvg: boolean;
 };
 
 type AnyRecord = Record<string, any>;
@@ -129,41 +128,23 @@ export async function parseSlide(
     const off = xfrm?.["a:off"];
     const ext = xfrm?.["a:ext"];
     const rotation = ooxmlRotToDeg(Number(xfrm?.["@_rot"]));
-    const target = resolveRelationship(options.rels, embed);
-    if (!target) {
+    const relationship = resolveRelationship(options.rels, embed);
+    if (!relationship) {
       continue;
     }
-    let normalizedTarget = normalizeTargetPath(target);
+    let normalizedTarget = normalizeTargetPath(relationship.target);
     const originalTarget = normalizedTarget;
     const baseExtension =
       path.posix.extname(normalizedTarget).toLowerCase() || ".png";
     const imageBaseName = `slide-${options.slideIndex}-img-${imageCount}`;
     let extension = baseExtension;
     let detectedType: ImageType | null = null;
-    const preferredSvg = findPreferredSvgTarget(
-      normalizedTarget,
-      options.zipFileExists,
-      options.svgTargets,
-    );
-    if (preferredSvg) {
-      normalizedTarget = preferredSvg;
-      extension = ".svg";
-    }
     let data = await options.zipReadFile(normalizedTarget);
-    detectedType = detectImageType(data, normalizedTarget, options.svgTargets);
+    detectedType = detectImageType(data);
     extension = resolveExtension(baseExtension, detectedType);
     if (extension === ".png" && data.length < 2000) {
-      const svgTarget = findSvgAlternative(
-        normalizedTarget,
-        options.zipFileExists,
-        options.svgTargets,
-      );
-      if (svgTarget) {
-        normalizedTarget = svgTarget;
-        data = await options.zipReadFile(normalizedTarget);
-        detectedType = detectImageType(data, normalizedTarget, options.svgTargets);
-        extension = resolveExtension(baseExtension, detectedType);
-      }
+      detectedType = detectImageType(data);
+      extension = resolveExtension(baseExtension, detectedType);
     }
     if (extension === ".png" && detectedType !== "png") {
       extension = fallbackNonPngExtension(baseExtension, detectedType);
@@ -179,9 +160,9 @@ export async function parseSlide(
         chosenTarget: normalizedTarget,
       },
     });
-    if (options.debugImages) {
+    if (options.debugSvg) {
       console.log(
-        `[images] target=${originalTarget} detected=${detectedType ?? "unknown"} output=${src}`,
+        `SVG_DEBUG slide=${options.slideIndex} rId=${relationship.id} target=${originalTarget} exported=${src}`,
       );
     }
     const element: ImageElement = {
@@ -345,13 +326,19 @@ function isStyleDifferent(a: RunStyle, b: RunStyle): boolean {
   );
 }
 
-function resolveRelationship(rels: RelsXml | null, id: string): string | null {
+function resolveRelationship(
+  rels: RelsXml | null,
+  id: string,
+): { id: string; target: string } | null {
   if (!rels?.Relationships?.Relationship) {
     return null;
   }
   const relationships = ensureArray(rels.Relationships.Relationship);
   const match = relationships.find((rel) => rel["@_Id"] === id);
-  return match?.["@_Target"] ?? null;
+  if (!match?.["@_Target"]) {
+    return null;
+  }
+  return { id, target: match["@_Target"] };
 }
 
 function normalizeTargetPath(target: string): string {
@@ -362,106 +349,9 @@ function normalizeTargetPath(target: string): string {
   return path.posix.join("ppt", normalized);
 }
 
-function findSvgAlternative(
-  pngTarget: string,
-  fileExists: (zipPath: string) => boolean,
-  svgTargets: Set<string>,
-): string | null {
-  const ext = path.posix.extname(pngTarget).toLowerCase();
-  if (ext !== ".png") {
-    return null;
-  }
-  const base = pngTarget.slice(0, -ext.length);
-  const match = base.match(/^(.*)-\d+$/);
-  if (match) {
-    const candidate = `${match[1]}-3.svg`;
-    if (fileExists(candidate) || svgTargets.has(candidate)) {
-      return candidate;
-    }
-  }
-  const direct = `${base}.svg`;
-  if (fileExists(direct) || svgTargets.has(direct)) {
-    return direct;
-  }
-  return null;
-}
-
-function findPreferredSvgTarget(
-  target: string,
-  fileExists: (zipPath: string) => boolean,
-  svgTargets: Set<string>,
-): string | null {
-  if (svgTargets.has(target)) {
-    return target;
-  }
-  const ext = path.posix.extname(target).toLowerCase();
-  const base = ext ? target.slice(0, -ext.length) : target;
-  const direct = `${base}.svg`;
-  if (fileExists(direct) || svgTargets.has(direct)) {
-    return direct;
-  }
-  if (ext === ".png") {
-    const gammaMatch = findGammaSvgPair(target, svgTargets);
-    if (gammaMatch) {
-      return gammaMatch;
-    }
-    return findSvgAlternative(target, fileExists, svgTargets);
-  }
-  return null;
-}
-
-function findGammaSvgPair(target: string, svgTargets: Set<string>): string | null {
-  const ext = path.posix.extname(target).toLowerCase();
-  if (ext !== ".png") {
-    return null;
-  }
-  const dir = path.posix.dirname(target);
-  const baseName = path.posix.basename(target, ext);
-  const match = baseName.match(/^(.*-)(\d+)$/);
-  if (!match) {
-    return null;
-  }
-  const prefix = match[1];
-  const index = Number(match[2]);
-  if (!Number.isFinite(index)) {
-    return null;
-  }
-  let best: { target: string; distance: number; above: boolean } | null = null;
-  for (const entry of svgTargets) {
-    if (!entry.startsWith(`${dir}/`)) {
-      continue;
-    }
-    const entryBase = path.posix.basename(entry, ".svg");
-    if (!entryBase.startsWith(prefix)) {
-      continue;
-    }
-    const entryIndex = Number(entryBase.slice(prefix.length));
-    if (!Number.isFinite(entryIndex)) {
-      continue;
-    }
-    const distance = Math.abs(entryIndex - index);
-    const above = entryIndex >= index;
-    if (
-      !best ||
-      distance < best.distance ||
-      (distance === best.distance && above && !best.above)
-    ) {
-      best = { target: entry, distance, above };
-    }
-  }
-  return best?.target ?? null;
-}
-
 type ImageType = "svg" | "png" | "jpeg";
 
-function detectImageType(
-  data: Buffer,
-  target: string,
-  svgTargets: Set<string>,
-): ImageType | null {
-  if (svgTargets.has(target)) {
-    return "svg";
-  }
+function detectImageType(data: Buffer): ImageType | null {
   if (isSvgData(data)) {
     return "svg";
   }

@@ -28,18 +28,6 @@ type PresentationXml = {
 
 type SlideXml = Record<string, unknown>;
 type RelsXml = Record<string, unknown>;
-type ContentTypesXml = {
-  Types?: {
-    Default?: Array<{ "@_Extension": string; "@_ContentType": string }> | {
-      "@_Extension": string;
-      "@_ContentType": string;
-    };
-    Override?: Array<{ "@_PartName": string; "@_ContentType": string }> | {
-      "@_PartName": string;
-      "@_ContentType": string;
-    };
-  };
-};
 
 type ConvertDependencies = {
   renderBackgrounds: typeof renderBackgrounds;
@@ -84,8 +72,6 @@ export async function convertPptxToOutZipInternal(
     if (slidePaths.length === 0) {
       throw new Error("No slides found in PPTX.");
     }
-
-    const svgTargets = await loadSvgTargets(archive.zip, limits);
 
     let themeColors: ThemeColorMap = {};
     try {
@@ -136,8 +122,7 @@ export async function convertPptxToOutZipInternal(
         zipFileExists: (zipPath: string) => Boolean(archive.zip.file(zipPath)),
         imagesDir: assetsDir,
         theme: themeColors,
-        svgTargets,
-        debugImages: isDebugImagesEnabled(),
+        debugSvg: isDebugSvgEnabled(),
       });
 
       const textCount = elements.filter((el) => el.type === "text").length;
@@ -247,58 +232,8 @@ async function buildZip(sourceDir: string, outZipPath: string): Promise<number> 
   return archive.pointer();
 }
 
-async function loadSvgTargets(
-  zip: PptxArchive["zip"],
-  limits: ReturnType<typeof getLimits>,
-): Promise<Set<string>> {
-  try {
-    const contentTypes = await readXml<ContentTypesXml>(
-      zip,
-      "[Content_Types].xml",
-      limits,
-    );
-    return extractSvgTargets(contentTypes, zip);
-  } catch {
-    return new Set<string>();
-  }
-}
-
-function extractSvgTargets(
-  contentTypes: ContentTypesXml,
-  zip: PptxArchive["zip"],
-): Set<string> {
-  const targets = new Set<string>();
-  const defaults = ensureArray(contentTypes.Types?.Default);
-  const overrides = ensureArray(contentTypes.Types?.Override);
-  const svgDefault = defaults.some(
-    (entry) =>
-      entry["@_Extension"] === "svg" &&
-      entry["@_ContentType"] === "image/svg+xml",
-  );
-  if (svgDefault) {
-    for (const entry of Object.values(zip.files)) {
-      if (!entry.dir && entry.name.toLowerCase().endsWith(".svg")) {
-        targets.add(entry.name.replace(/^\//, ""));
-      }
-    }
-  }
-  for (const override of overrides) {
-    if (override["@_ContentType"] === "image/svg+xml") {
-      targets.add(override["@_PartName"].replace(/^\//, ""));
-    }
-  }
-  return targets;
-}
-
-function ensureArray<T>(value: T | T[] | undefined): T[] {
-  if (!value) {
-    return [];
-  }
-  return Array.isArray(value) ? value : [value];
-}
-
-function isDebugImagesEnabled(): boolean {
-  const value = process.env.PPTX_IMPORTER_DEBUG_IMAGES;
+function isDebugSvgEnabled(): boolean {
+  const value = process.env.PPTX_IMPORTER_DEBUG_SVG;
   if (!value) {
     return false;
   }

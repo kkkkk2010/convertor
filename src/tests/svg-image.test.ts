@@ -7,10 +7,8 @@ import { convertPptxToOutZipInternal } from "../convert";
 
 const SVG_PAYLOAD =
   '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>';
-const SVG_GAMMA_PAYLOAD =
+const SVG_TARGET_PAYLOAD =
   '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"></svg>';
-const SVG_GAMMA2_PAYLOAD =
-  '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"></svg>';
 const ONE_BY_ONE_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO0nDkQAAAAASUVORK5CYII=";
 
@@ -30,23 +28,22 @@ test("SVG media is preserved with .svg extension", async () => {
   const pngBytes = await pngFile.async("nodebuffer");
   assert.ok(isPngSignature(pngBytes), "png bytes should have signature");
 
-  const svgFile = outZip.file("assets/images/slide-1-img-2.svg");
-  assert.ok(svgFile, "svg asset should exist");
+  const pngFile2 = outZip.file("assets/images/slide-1-img-2.png");
+  assert.ok(pngFile2, "second png asset should exist");
+  const pngBytes2 = await pngFile2.async("nodebuffer");
+  assert.ok(isPngSignature(pngBytes2), "second png bytes should have signature");
   assert.ok(
-    !outZip.file("assets/images/slide-1-img-2.png"),
-    "png asset should not exist for svg content",
+    !outZip.file("assets/images/slide-1-img-2.svg"),
+    "svg asset should not exist when relationship targets png",
   );
-  const svgBytes = await svgFile.async("string");
-  assert.ok(svgBytes.startsWith("<svg"), "svg bytes should be preserved");
 
-  const gammaSvgFile = outZip.file("assets/images/slide-1-img-3.svg");
-  assert.ok(gammaSvgFile, "gamma svg asset should exist");
+  const svgTargetFile = outZip.file("assets/images/slide-1-img-3.svg");
+  assert.ok(svgTargetFile, "svg target asset should exist");
+  const svgTargetBytes = await svgTargetFile.async("string");
   assert.ok(
-    !outZip.file("assets/images/slide-1-img-3.png"),
-    "gamma png preview should not be exported",
+    svgTargetBytes.startsWith("<svg"),
+    "svg target bytes should be preserved",
   );
-  const gammaSvgBytes = await gammaSvgFile.async("string");
-  assert.ok(gammaSvgBytes.startsWith("<svg"), "gamma svg bytes should be preserved");
 
   const docFile = outZip.file("doc.json");
   assert.ok(docFile, "doc.json should exist");
@@ -58,23 +55,7 @@ test("SVG media is preserved with .svg extension", async () => {
   );
   assert.ok(
     imageSources.includes("assets/images/slide-1-img-3.svg"),
-    "doc.json should reference the gamma svg asset",
-  );
-
-  const gamma2SvgFile = outZip.file("assets/images/slide-1-img-4.svg");
-  assert.ok(gamma2SvgFile, "gamma2 svg asset should exist");
-  assert.ok(
-    !outZip.file("assets/images/slide-1-img-4.png"),
-    "gamma2 png preview should not be exported",
-  );
-  const gamma2SvgBytes = await gamma2SvgFile.async("string");
-  assert.ok(
-    gamma2SvgBytes.startsWith("<svg"),
-    "gamma2 svg bytes should be preserved",
-  );
-  assert.ok(
-    imageSources.includes("assets/images/slide-1-img-4.svg"),
-    "doc.json should reference the gamma2 svg asset",
+    "doc.json should reference the svg target asset",
   );
 });
 
@@ -137,17 +118,6 @@ async function buildSvgPptx(): Promise<Buffer> {
           </a:xfrm>
         </p:spPr>
       </p:pic>
-      <p:pic>
-        <p:blipFill>
-          <a:blip r:embed="rId4"/>
-        </p:blipFill>
-        <p:spPr>
-          <a:xfrm>
-            <a:off x="914400" y="914400"/>
-            <a:ext cx="914400" cy="914400"/>
-          </a:xfrm>
-        </p:spPr>
-      </p:pic>
     </p:spTree>
   </p:cSld>
 </p:sld>`,
@@ -164,25 +134,13 @@ async function buildSvgPptx(): Promise<Buffer> {
     Target="../media/image2.png"/>
   <Relationship Id="rId3"
     Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
-    Target="../media/image-7-2.png"/>
-  <Relationship Id="rId4"
-    Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
-    Target="../media/image-1-2.png"/>
+    Target="../media/image10.svg"/>
 </Relationships>`,
   );
   zip.file("ppt/media/image1.png", Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"));
   zip.file("ppt/media/image2.png", Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"));
   zip.file("ppt/media/image2.svg", SVG_PAYLOAD);
-  zip.file(
-    "ppt/media/image-7-2.png",
-    Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"),
-  );
-  zip.file("ppt/media/image-7-3.svg", SVG_GAMMA_PAYLOAD);
-  zip.file(
-    "ppt/media/image-1-2.png",
-    Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"),
-  );
-  zip.file("ppt/media/image-1-3.svg", SVG_GAMMA2_PAYLOAD);
+  zip.file("ppt/media/image10.svg", SVG_TARGET_PAYLOAD);
 
   return zip.generateAsync({ type: "nodebuffer" });
 }
