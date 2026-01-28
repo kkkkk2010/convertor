@@ -54,6 +54,8 @@ type ParseSlideOptions = {
   zipFileExists: (zipPath: string) => boolean;
   imagesDir: string;
   theme: ThemeColorMap;
+  svgTargets: Set<string>;
+  debugImages: boolean;
 };
 
 type AnyRecord = Record<string, any>;
@@ -132,23 +134,39 @@ export async function parseSlide(
       continue;
     }
     let normalizedTarget = normalizeTargetPath(target);
-    let extension =
+    const originalTarget = normalizedTarget;
+    const baseExtension =
       path.posix.extname(normalizedTarget).toLowerCase() || ".png";
     const imageBaseName = `slide-${options.slideIndex}-img-${imageCount}`;
-    let data = await options.zipReadFile(normalizedTarget);
-    if (isSvgData(data)) {
+    let extension = baseExtension;
+    let detectedType: ImageType | null = null;
+    const preferredSvg = findPreferredSvgTarget(
+      normalizedTarget,
+      options.zipFileExists,
+      options.svgTargets,
+    );
+    if (preferredSvg) {
+      normalizedTarget = preferredSvg;
       extension = ".svg";
     }
+    let data = await options.zipReadFile(normalizedTarget);
+    detectedType = detectImageType(data, normalizedTarget, options.svgTargets);
+    extension = resolveExtension(baseExtension, detectedType);
     if (extension === ".png" && data.length < 2000) {
-      const svgTarget = findSvgAlternative(normalizedTarget, options.zipFileExists);
+      const svgTarget = findSvgAlternative(
+        normalizedTarget,
+        options.zipFileExists,
+        options.svgTargets,
+      );
       if (svgTarget) {
         normalizedTarget = svgTarget;
-        extension = ".svg";
         data = await options.zipReadFile(normalizedTarget);
+        detectedType = detectImageType(data, normalizedTarget, options.svgTargets);
+        extension = resolveExtension(baseExtension, detectedType);
       }
     }
-    if (extension !== ".svg" && isSvgData(data)) {
-      extension = ".svg";
+    if (extension === ".png" && detectedType !== "png") {
+      extension = fallbackNonPngExtension(baseExtension, detectedType);
     }
     const { src } = await saveImageAsset({
       extension,
@@ -156,6 +174,11 @@ export async function parseSlide(
       imageBaseName,
       imagesDir: options.imagesDir,
     });
+    if (options.debugImages) {
+      console.log(
+        `[images] target=${originalTarget} detected=${detectedType ?? "unknown"} output=${src}`,
+      );
+    }
     const element: ImageElement = {
       id: `i${imageCount}`,
       type: "image",
@@ -337,6 +360,7 @@ function normalizeTargetPath(target: string): string {
 function findSvgAlternative(
   pngTarget: string,
   fileExists: (zipPath: string) => boolean,
+  svgTargets: Set<string>,
 ): string | null {
   const ext = path.posix.extname(pngTarget).toLowerCase();
   if (ext !== ".png") {
@@ -346,20 +370,94 @@ function findSvgAlternative(
   const match = base.match(/^(.*)-\d+$/);
   if (match) {
     const candidate = `${match[1]}-3.svg`;
-    if (fileExists(candidate)) {
+    if (fileExists(candidate) || svgTargets.has(candidate)) {
       return candidate;
     }
   }
   const direct = `${base}.svg`;
-  if (fileExists(direct)) {
+  if (fileExists(direct) || svgTargets.has(direct)) {
     return direct;
   }
   return null;
 }
 
+function findPreferredSvgTarget(
+  target: string,
+  fileExists: (zipPath: string) => boolean,
+  svgTargets: Set<string>,
+): string | null {
+  if (svgTargets.has(target)) {
+    return target;
+  }
+  const ext = path.posix.extname(target).toLowerCase();
+  const base = ext ? target.slice(0, -ext.length) : target;
+  const direct = `${base}.svg`;
+  if (fileExists(direct) || svgTargets.has(direct)) {
+    return direct;
+  }
+  if (ext === ".png") {
+    return findSvgAlternative(target, fileExists, svgTargets);
+  }
+  return null;
+}
+
+type ImageType = "svg" | "png" | "jpeg";
+
+function detectImageType(
+  data: Buffer,
+  target: string,
+  svgTargets: Set<string>,
+): ImageType | null {
+  if (svgTargets.has(target)) {
+    return "svg";
+  }
+  if (isSvgData(data)) {
+    return "svg";
+  }
+  if (isPngSignature(data)) {
+    return "png";
+  }
+  if (isJpegSignature(data)) {
+    return "jpeg";
+  }
+  return null;
+}
+
+function resolveExtension(
+  baseExtension: string,
+  detectedType: ImageType | null,
+): string {
+  if (detectedType === "svg") {
+    return ".svg";
+  }
+  if (detectedType === "png") {
+    return ".png";
+  }
+  if (detectedType === "jpeg") {
+    return ".jpg";
+  }
+  return baseExtension || ".bin";
+}
+
+function fallbackNonPngExtension(
+  baseExtension: string,
+  detectedType: ImageType | null,
+): string {
+  if (detectedType === "svg") {
+    return ".svg";
+  }
+  if (detectedType === "jpeg") {
+    return ".jpg";
+  }
+  if (baseExtension && baseExtension !== ".png") {
+    return baseExtension;
+  }
+  return ".bin";
+}
+
 function isSvgData(data: Buffer): boolean {
   const snippet = data
-    .toString("utf8", 0, 1024)
+    .toString("utf8", 0, 2048)
     .replace(/^\uFEFF/, "")
     .trimStart();
   if (snippet.startsWith("<svg")) {
@@ -369,6 +467,29 @@ function isSvgData(data: Buffer): boolean {
     return true;
   }
   return false;
+}
+
+function isPngSignature(data: Buffer): boolean {
+  if (data.length < 8) {
+    return false;
+  }
+  return (
+    data[0] === 0x89 &&
+    data[1] === 0x50 &&
+    data[2] === 0x4e &&
+    data[3] === 0x47 &&
+    data[4] === 0x0d &&
+    data[5] === 0x0a &&
+    data[6] === 0x1a &&
+    data[7] === 0x0a
+  );
+}
+
+function isJpegSignature(data: Buffer): boolean {
+  if (data.length < 3) {
+    return false;
+  }
+  return data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff;
 }
 
 type SaveImageOptions = {

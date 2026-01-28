@@ -7,6 +7,8 @@ import { convertPptxToOutZipInternal } from "../convert";
 
 const SVG_PAYLOAD =
   '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>';
+const ONE_BY_ONE_PNG_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO0nDkQAAAAASUVORK5CYII=";
 
 test("SVG media is preserved with .svg extension", async () => {
   const pptxBuffer = await buildSvgPptx();
@@ -19,10 +21,15 @@ test("SVG media is preserved with .svg extension", async () => {
   });
 
   const outZip = await JSZip.loadAsync(zipBuffer);
-  const svgFile = outZip.file("assets/images/slide-1-img-1.svg");
+  const pngFile = outZip.file("assets/images/slide-1-img-1.png");
+  assert.ok(pngFile, "png asset should exist");
+  const pngBytes = await pngFile.async("nodebuffer");
+  assert.ok(isPngSignature(pngBytes), "png bytes should have signature");
+
+  const svgFile = outZip.file("assets/images/slide-1-img-2.svg");
   assert.ok(svgFile, "svg asset should exist");
   assert.ok(
-    !outZip.file("assets/images/slide-1-img-1.png"),
+    !outZip.file("assets/images/slide-1-img-2.png"),
     "png asset should not exist for svg content",
   );
   const svgBytes = await svgFile.async("string");
@@ -37,6 +44,7 @@ async function buildSvgPptx(): Promise<Buffer> {
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="xml" ContentType="application/xml"/>
   <Default Extension="png" ContentType="image/png"/>
+  <Default Extension="svg" ContentType="image/svg+xml"/>
 </Types>`,
   );
   zip.file(
@@ -65,6 +73,17 @@ async function buildSvgPptx(): Promise<Buffer> {
           </a:xfrm>
         </p:spPr>
       </p:pic>
+      <p:pic>
+        <p:blipFill>
+          <a:blip r:embed="rId2"/>
+        </p:blipFill>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="914400" y="0"/>
+            <a:ext cx="914400" cy="914400"/>
+          </a:xfrm>
+        </p:spPr>
+      </p:pic>
     </p:spTree>
   </p:cSld>
 </p:sld>`,
@@ -76,9 +95,30 @@ async function buildSvgPptx(): Promise<Buffer> {
   <Relationship Id="rId1"
     Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
     Target="../media/image1.png"/>
+  <Relationship Id="rId2"
+    Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
+    Target="../media/image2.png"/>
 </Relationships>`,
   );
-  zip.file("ppt/media/image1.png", SVG_PAYLOAD);
+  zip.file("ppt/media/image1.png", Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"));
+  zip.file("ppt/media/image2.png", Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"));
+  zip.file("ppt/media/image2.svg", SVG_PAYLOAD);
 
   return zip.generateAsync({ type: "nodebuffer" });
+}
+
+function isPngSignature(data: Buffer): boolean {
+  if (data.length < 8) {
+    return false;
+  }
+  return (
+    data[0] === 0x89 &&
+    data[1] === 0x50 &&
+    data[2] === 0x4e &&
+    data[3] === 0x47 &&
+    data[4] === 0x0d &&
+    data[5] === 0x0a &&
+    data[6] === 0x1a &&
+    data[7] === 0x0a
+  );
 }
