@@ -28,21 +28,16 @@ test("SVG media is preserved with .svg extension", async () => {
   const pngBytes = await pngFile.async("nodebuffer");
   assert.ok(isPngSignature(pngBytes), "png bytes should have signature");
 
-  const pngFile2 = outZip.file("assets/images/slide-1-img-2.png");
-  assert.ok(pngFile2, "second png asset should exist");
-  const pngBytes2 = await pngFile2.async("nodebuffer");
-  assert.ok(isPngSignature(pngBytes2), "second png bytes should have signature");
-  assert.ok(
-    !outZip.file("assets/images/slide-1-img-2.svg"),
-    "svg asset should not exist when relationship targets png",
-  );
-
-  const svgTargetFile = outZip.file("assets/images/slide-1-img-3.svg");
+  const svgTargetFile = outZip.file("assets/images/slide-1-img-2.svg");
   assert.ok(svgTargetFile, "svg target asset should exist");
   const svgTargetBytes = await svgTargetFile.async("string");
   assert.ok(
     svgTargetBytes.startsWith("<svg"),
     "svg target bytes should be preserved",
+  );
+  assert.ok(
+    !outZip.file("assets/images/slide-1-img-2.png"),
+    "preview png should not be exported when svgRid exists",
   );
 
   const docFile = outZip.file("doc.json");
@@ -54,7 +49,7 @@ test("SVG media is preserved with .svg extension", async () => {
     slide.elements.map((element) => element.src).filter(Boolean),
   );
   assert.ok(
-    imageSources.includes("assets/images/slide-1-img-3.svg"),
+    imageSources.includes("assets/images/slide-1-img-2.svg"),
     "doc.json should reference the svg target asset",
   );
 });
@@ -98,22 +93,17 @@ async function buildSvgPptx(): Promise<Buffer> {
       </p:pic>
       <p:pic>
         <p:blipFill>
-          <a:blip r:embed="rId2"/>
+          <a:blip r:embed="rId2">
+            <a:extLst>
+              <a:ext uri="{96DAC541-7B7A-43D3-8B79-37D633B846F1}">
+                <asvg:svgBlip xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" r:embed="rId3"/>
+              </a:ext>
+            </a:extLst>
+          </a:blip>
         </p:blipFill>
         <p:spPr>
           <a:xfrm>
             <a:off x="914400" y="0"/>
-            <a:ext cx="914400" cy="914400"/>
-          </a:xfrm>
-        </p:spPr>
-      </p:pic>
-      <p:pic>
-        <p:blipFill>
-          <a:blip r:embed="rId3"/>
-        </p:blipFill>
-        <p:spPr>
-          <a:xfrm>
-            <a:off x="0" y="914400"/>
             <a:ext cx="914400" cy="914400"/>
           </a:xfrm>
         </p:spPr>
@@ -131,16 +121,15 @@ async function buildSvgPptx(): Promise<Buffer> {
     Target="../media/image1.png"/>
   <Relationship Id="rId2"
     Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
-    Target="../media/image2.png"/>
+    Target="../media/preview.png"/>
   <Relationship Id="rId3"
     Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
-    Target="../media/image10.svg"/>
+    Target="../media/icon.svg"/>
 </Relationships>`,
   );
   zip.file("ppt/media/image1.png", Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"));
-  zip.file("ppt/media/image2.png", Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"));
-  zip.file("ppt/media/image2.svg", SVG_PAYLOAD);
-  zip.file("ppt/media/image10.svg", SVG_TARGET_PAYLOAD);
+  zip.file("ppt/media/preview.png", Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"));
+  zip.file("ppt/media/icon.svg", SVG_TARGET_PAYLOAD);
 
   return zip.generateAsync({ type: "nodebuffer" });
 }

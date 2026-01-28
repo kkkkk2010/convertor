@@ -118,9 +118,11 @@ export async function parseSlide(
 
   let imageCount = 0;
   for (const pic of pics) {
-    const blip = pic?.["p:blipFill"]?.["a:blip"];
-    const embed = blip?.["@_r:embed"];
-    if (!embed) {
+    const blip = pic?.["p:blipFill"]?.["a:blip"] as AnyRecord | undefined;
+    const rasterRid = blip?.["@_r:embed"] as string | undefined;
+    const svgRid = findSvgBlipEmbed(blip);
+    const chosenRid = svgRid ?? rasterRid;
+    if (!chosenRid) {
       continue;
     }
     imageCount += 1;
@@ -128,8 +130,13 @@ export async function parseSlide(
     const off = xfrm?.["a:off"];
     const ext = xfrm?.["a:ext"];
     const rotation = ooxmlRotToDeg(Number(xfrm?.["@_rot"]));
-    const relationship = resolveRelationship(options.rels, embed);
+    const relationship = resolveRelationship(options.rels, chosenRid);
     if (!relationship) {
+      if (svgRid) {
+        throw new Error(
+          `Missing SVG relationship for rId ${svgRid} on slide ${options.slideIndex}.`,
+        );
+      }
       continue;
     }
     let normalizedTarget = normalizeTargetPath(relationship.target);
@@ -162,7 +169,7 @@ export async function parseSlide(
     });
     if (options.debugSvg) {
       console.log(
-        `SVG_DEBUG slide=${options.slideIndex} rId=${relationship.id} target=${originalTarget} exported=${src}`,
+        `SVG_DEBUG slide=${options.slideIndex} rasterRid=${rasterRid ?? "none"} svgRid=${svgRid ?? "none"} chosenRid=${relationship.id} target=${originalTarget} exported=${src}`,
       );
     }
     const element: ImageElement = {
@@ -347,6 +354,34 @@ function normalizeTargetPath(target: string): string {
     return normalized;
   }
   return path.posix.join("ppt", normalized);
+}
+
+function findSvgBlipEmbed(blip: AnyRecord | undefined): string | undefined {
+  if (!blip || typeof blip !== "object") {
+    return undefined;
+  }
+  const stack: unknown[] = [blip];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current || typeof current !== "object") {
+      continue;
+    }
+    const record = current as Record<string, unknown>;
+    for (const [key, value] of Object.entries(record)) {
+      if (key.endsWith("svgBlip") && value && typeof value === "object") {
+        const embed = (value as Record<string, unknown>)["@_r:embed"];
+        if (typeof embed === "string" && embed.length > 0) {
+          return embed;
+        }
+      }
+      if (Array.isArray(value)) {
+        stack.push(...value);
+      } else if (value && typeof value === "object") {
+        stack.push(value);
+      }
+    }
+  }
+  return undefined;
 }
 
 type ImageType = "svg" | "png" | "jpeg";
