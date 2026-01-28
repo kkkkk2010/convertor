@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc",
     "import": "node dist/importer.js",
-    "start": "node dist/importer.js"
+    "start": "node dist/importer.js",
+    "test": "npm run build && node --test dist/tests"
   },
   "dependencies": {
     "@xmldom/xmldom": "^0.8.10",

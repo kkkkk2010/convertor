@@ -2,14 +2,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { execFile, spawnSync } from "node:child_process";
-import { promisify } from "node:util";
-
-const execFileAsync = promisify(execFile);
+import { getLimits } from "../limits";
 
 export async function renderBackgrounds(
   inputPptx: string,
   outDir: string,
 ): Promise<void> {
+  const limits = getLimits();
   const libreOfficeBinary = resolveLibreOfficeBinary();
   if (!libreOfficeBinary) {
     const candidates = getLibreOfficeCandidates();
@@ -35,24 +34,32 @@ export async function renderBackgrounds(
   const pdfName = pptxName.replace(/\.pptx$/i, ".pdf");
   const pdfPath = path.join(tmpDir, pdfName);
 
-  await execFileAsync(libreOfficeBinary, [
-    "--headless",
-    "--convert-to",
-    "pdf",
-    "--outdir",
-    tmpDir,
-    inputPptx,
-  ]);
+  try {
+    await execFileWithTimeout(
+      libreOfficeBinary,
+      [
+        "--headless",
+        "--convert-to",
+        "pdf",
+        "--outdir",
+        tmpDir,
+        inputPptx,
+      ],
+      limits.libreOfficeTimeoutMs,
+      "LibreOffice",
+    );
 
-  await execFileAsync("pdftoppm", [
-    "-png",
-    "-r",
-    "144",
-    pdfPath,
-    path.join(backgroundsDir, "slide"),
-  ]);
+    await execFileWithTimeout(
+      "pdftoppm",
+      ["-png", "-r", "144", pdfPath, path.join(backgroundsDir, "slide")],
+      limits.pdftoppmTimeoutMs,
+      "pdftoppm",
+    );
 
-  await normalizeBackgroundNames(backgroundsDir);
+    await normalizeBackgroundNames(backgroundsDir);
+  } finally {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  }
 }
 
 export function resolveLibreOfficeBinary(): string | null {
@@ -119,4 +126,48 @@ function extractNumber(fileName: string): number {
     return Number.MAX_SAFE_INTEGER;
   }
   return Number(match[1]);
+}
+
+async function execFileWithTimeout(
+  command: string,
+  args: string[],
+  timeoutMs: number,
+  label: string,
+): Promise<void> {
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const child = execFile(
+        command,
+        args,
+        { timeout: timeoutMs, killSignal: "SIGKILL" },
+        (error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+          resolve();
+        },
+      );
+
+      child.on("error", (error) => {
+        reject(error);
+      });
+    });
+  } catch (error) {
+    if (error instanceof Error && "killed" in error) {
+      const errorDetails = error as {
+        killed?: boolean;
+        signal?: string;
+        code?: string;
+      };
+      if (
+        errorDetails.killed ||
+        errorDetails.signal === "SIGKILL" ||
+        errorDetails.code === "ETIMEDOUT"
+      ) {
+        throw new Error(`${label} timed out after ${timeoutMs}ms.`);
+      }
+    }
+    throw error;
+  }
 }

@@ -1,26 +1,7 @@
 import fs from "node:fs/promises";
 import fsSync from "node:fs";
 import path from "node:path";
-import os from "node:os";
-import { readPptx, readXml, listSlidePaths, getSlideRelsPath } from "./pptx/read";
-import { parseSlide, emuToPx } from "./pptx/parse_slide";
-import { renderBackgrounds } from "./render/backgrounds";
-import { DocJson } from "./types";
-import { createCleanPptx } from "./pptx/clean_pptx";
-import { ThemeColorMap, parseThemeColors } from "./pptx/theme";
-import archiver from "archiver";
-
-type PresentationXml = {
-  "p:presentation"?: {
-    "p:sldSz"?: {
-      "@_cx"?: string;
-      "@_cy"?: string;
-    };
-  };
-};
-
-type SlideXml = Record<string, unknown>;
-type RelsXml = Record<string, unknown>;
+import { convertPptxToOutZip } from "./convert";
 
 async function main() {
   try {
@@ -51,138 +32,12 @@ async function main() {
       }
     }
 
-    const tempOutDir = fsSync.mkdtempSync(
-      path.join(os.tmpdir(), "pptx-import-"),
-    );
-
-    const archive = await readPptx(input);
-    const slidePaths = listSlidePaths(archive.zip);
-    if (slidePaths.length === 0) {
-      throw new Error("No slides found in PPTX.");
-    }
-
-    let themeColors: ThemeColorMap = {};
-    try {
-      const themeXml = await readXml<Record<string, unknown>>(
-        archive.zip,
-        "ppt/theme/theme1.xml",
-      );
-      themeColors = parseThemeColors(themeXml);
-    } catch {
-      themeColors = {};
-    }
-
-    const presentation = await readXml<PresentationXml>(
-      archive.zip,
-      "ppt/presentation.xml",
-    );
-    const slideSize = extractSlideSize(presentation);
-
-    const assetsDir = path.join(tempOutDir, "assets/images");
-    await fs.mkdir(assetsDir, { recursive: true });
-
-    console.log(`Slides found: ${slidePaths.length}`);
-
-    let totalTextElements = 0;
-    let totalSchemeClr = 0;
-    let totalMultistyle = 0;
-    let totalImages = 0;
-    const slides = [];
-    for (let i = 0; i < slidePaths.length; i += 1) {
-      const slidePath = slidePaths[i];
-      const slideIndex = i + 1;
-      const slideXml = await readXml<SlideXml>(archive.zip, slidePath);
-      const relsPath = getSlideRelsPath(slidePath);
-      let relsXml: RelsXml | null = null;
-      try {
-        relsXml = await readXml<RelsXml>(archive.zip, relsPath);
-      } catch {
-        relsXml = null;
-      }
-
-      const { elements, stats } = await parseSlide(slideXml, {
-        slideIndex,
-        rels: relsXml as RelsXml,
-        zipReadFile: async (zipPath: string) => {
-          const file = archive.zip.file(zipPath);
-          if (!file) {
-            throw new Error(`Missing media file: ${zipPath}`);
-          }
-          const data = await file.async("nodebuffer");
-          return Buffer.from(data);
-        },
-        zipFileExists: (zipPath: string) => Boolean(archive.zip.file(zipPath)),
-        imagesDir: assetsDir,
-        theme: themeColors,
-      });
-
-      const textCount = elements.filter((el) => el.type === "text").length;
-      const imageCount = elements.filter((el) => el.type === "image").length;
-      console.log(
-        `Slide ${slideIndex}: ${textCount} text, ${imageCount} images`,
-      );
-
-      totalTextElements += stats.textElements;
-      totalSchemeClr += stats.schemeClrElements;
-      totalMultistyle += stats.multistyleElements;
-      totalImages += stats.imageElements;
-
-      slides.push({
-        id: `s${slideIndex}`,
-        background: {
-          type: "image" as const,
-          src: path.posix.join("backgrounds", `slide-${slideIndex}.png`),
-        },
-        elements,
-      });
-    }
-
-    const doc: DocJson = {
-      schemaVersion: 1,
-      slideSize,
-      slides,
-    };
-
-    console.log(`Text elements: ${totalTextElements}`);
-    console.log(`Text elements with schemeClr: ${totalSchemeClr}`);
-    console.log(`MULTISTYLE: ${totalMultistyle}`);
-
-    const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "pptx-import-clean-"));
-    const cleanedPptxPath = path.join(tmpDir, "cleaned.pptx");
-    let backgroundPptxPath = input;
-    try {
-      await createCleanPptx(archive.zip, slidePaths, cleanedPptxPath);
-      backgroundPptxPath = cleanedPptxPath;
-    } catch (cleanError) {
-      const message =
-        cleanError instanceof Error
-          ? cleanError.message
-          : "Unknown error";
-      console.warn(
-        `Warning: failed to create cleaned PPTX, falling back to original. ${message}`,
-      );
-    }
-
-    await renderBackgrounds(backgroundPptxPath, tempOutDir);
-
-    await fs.writeFile(
-      path.join(tempOutDir, "doc.json"),
-      JSON.stringify(doc, null, 2),
-      "utf-8",
-    );
-
-    const zipSize = await buildZip(tempOutDir, outZipPath);
-    const zipStat = fsSync.statSync(outZipPath);
-    if (!zipStat.isFile() || zipStat.size <= 1024) {
-      throw new Error(
-        `Expected zip file larger than 1KB, got ${zipStat.size} bytes at ${outZipPath}`,
-      );
-    }
-    await fs.rm(tempOutDir, { recursive: true, force: true });
-    await fs.rm(tmpDir, { recursive: true, force: true });
-    console.log(`wrote zip file size=${zipSize}`);
+    const inputBuffer = await fs.readFile(input);
+    const zipBuffer = await convertPptxToOutZip(inputBuffer);
+    await writeZipSafely(outZipPath, zipBuffer);
+    const stats = zipBuffer.conversionStats;
     console.log(
-      `✔ Exported presentation to ${path.basename(outZipPath)} (${slidePaths.length} slides, ${totalImages} images)`,
+      `✔ Exported presentation to ${path.basename(outZipPath)} (${stats?.slideCount ?? 0} slides, ${stats?.imageCount ?? 0} images)`,
     );
   } catch (error) {
     const message =
@@ -223,38 +78,24 @@ async function ensureInput(inputPath: string): Promise<void> {
   }
 }
 
-function extractSlideSize(presentation: PresentationXml): DocJson["slideSize"] {
-  const size = presentation["p:presentation"]?.["p:sldSz"];
-  if (!size?.["@_cx"] || !size?.["@_cy"]) {
-    return {
-      width: 13.333,
-      height: 7.5,
-      unit: "in",
-    };
+async function writeZipSafely(
+  outZipPath: string,
+  zipBuffer: Buffer,
+): Promise<void> {
+  const tempDir = path.dirname(outZipPath);
+  const tempFile = path.join(
+    tempDir,
+    `.out-${process.pid}-${Date.now()}.zip`,
+  );
+  await fs.writeFile(tempFile, zipBuffer);
+  const stat = fsSync.statSync(tempFile);
+  if (!stat.isFile() || stat.size <= 1024) {
+    await fs.rm(tempFile, { force: true });
+    throw new Error(
+      `Expected zip file larger than 1KB, got ${stat.size} bytes at ${tempFile}`,
+    );
   }
-  const widthPx = emuToPx(Number(size["@_cx"]));
-  const heightPx = emuToPx(Number(size["@_cy"]));
-  return {
-    width: Number((widthPx / 96).toFixed(3)),
-    height: Number((heightPx / 96).toFixed(3)),
-    unit: "in",
-  };
-}
-
-async function buildZip(sourceDir: string, outZipPath: string): Promise<number> {
-  const output = fsSync.createWriteStream(outZipPath);
-  const archive = archiver("zip", { zlib: { level: 9 } });
-  archive.directory(sourceDir, false);
-  archive.pipe(output);
-
-  await new Promise<void>((resolve, reject) => {
-    output.on("close", () => resolve());
-    output.on("error", (error: Error) => reject(error));
-    archive.on("error", (error: Error) => reject(error));
-    void archive.finalize();
-  });
-
-  return archive.pointer();
+  await fs.rename(tempFile, outZipPath);
 }
 
 void main();
