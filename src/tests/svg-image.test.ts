@@ -7,6 +7,8 @@ import { convertPptxToOutZipInternal } from "../convert";
 
 const SVG_PAYLOAD =
   '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>';
+const SVG_GAMMA_PAYLOAD =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"></svg>';
 const ONE_BY_ONE_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO0nDkQAAAAASUVORK5CYII=";
 
@@ -34,6 +36,28 @@ test("SVG media is preserved with .svg extension", async () => {
   );
   const svgBytes = await svgFile.async("string");
   assert.ok(svgBytes.startsWith("<svg"), "svg bytes should be preserved");
+
+  const gammaSvgFile = outZip.file("assets/images/slide-1-img-3.svg");
+  assert.ok(gammaSvgFile, "gamma svg asset should exist");
+  assert.ok(
+    !outZip.file("assets/images/slide-1-img-3.png"),
+    "gamma png preview should not be exported",
+  );
+  const gammaSvgBytes = await gammaSvgFile.async("string");
+  assert.ok(gammaSvgBytes.startsWith("<svg"), "gamma svg bytes should be preserved");
+
+  const docFile = outZip.file("doc.json");
+  assert.ok(docFile, "doc.json should exist");
+  const docJson = JSON.parse(await docFile.async("string")) as {
+    slides: Array<{ elements: Array<{ src?: string }> }>;
+  };
+  const imageSources = docJson.slides.flatMap((slide) =>
+    slide.elements.map((element) => element.src).filter(Boolean),
+  );
+  assert.ok(
+    imageSources.includes("assets/images/slide-1-img-3.svg"),
+    "doc.json should reference the gamma svg asset",
+  );
 });
 
 async function buildSvgPptx(): Promise<Buffer> {
@@ -84,6 +108,17 @@ async function buildSvgPptx(): Promise<Buffer> {
           </a:xfrm>
         </p:spPr>
       </p:pic>
+      <p:pic>
+        <p:blipFill>
+          <a:blip r:embed="rId3"/>
+        </p:blipFill>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="0" y="914400"/>
+            <a:ext cx="914400" cy="914400"/>
+          </a:xfrm>
+        </p:spPr>
+      </p:pic>
     </p:spTree>
   </p:cSld>
 </p:sld>`,
@@ -98,11 +133,19 @@ async function buildSvgPptx(): Promise<Buffer> {
   <Relationship Id="rId2"
     Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
     Target="../media/image2.png"/>
+  <Relationship Id="rId3"
+    Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
+    Target="../media/image-7-2.png"/>
 </Relationships>`,
   );
   zip.file("ppt/media/image1.png", Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"));
   zip.file("ppt/media/image2.png", Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"));
   zip.file("ppt/media/image2.svg", SVG_PAYLOAD);
+  zip.file(
+    "ppt/media/image-7-2.png",
+    Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"),
+  );
+  zip.file("ppt/media/image-7-3.svg", SVG_GAMMA_PAYLOAD);
 
   return zip.generateAsync({ type: "nodebuffer" });
 }

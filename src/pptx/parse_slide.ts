@@ -396,9 +396,55 @@ function findPreferredSvgTarget(
     return direct;
   }
   if (ext === ".png") {
+    const gammaMatch = findGammaSvgPair(target, svgTargets);
+    if (gammaMatch) {
+      return gammaMatch;
+    }
     return findSvgAlternative(target, fileExists, svgTargets);
   }
   return null;
+}
+
+function findGammaSvgPair(target: string, svgTargets: Set<string>): string | null {
+  const ext = path.posix.extname(target).toLowerCase();
+  if (ext !== ".png") {
+    return null;
+  }
+  const dir = path.posix.dirname(target);
+  const baseName = path.posix.basename(target, ext);
+  const match = baseName.match(/^(.*-)(\d+)$/);
+  if (!match) {
+    return null;
+  }
+  const prefix = match[1];
+  const index = Number(match[2]);
+  if (!Number.isFinite(index)) {
+    return null;
+  }
+  let best: { target: string; distance: number; above: boolean } | null = null;
+  for (const entry of svgTargets) {
+    if (!entry.startsWith(`${dir}/`)) {
+      continue;
+    }
+    const entryBase = path.posix.basename(entry, ".svg");
+    if (!entryBase.startsWith(prefix)) {
+      continue;
+    }
+    const entryIndex = Number(entryBase.slice(prefix.length));
+    if (!Number.isFinite(entryIndex)) {
+      continue;
+    }
+    const distance = Math.abs(entryIndex - index);
+    const above = entryIndex >= index;
+    if (
+      !best ||
+      distance < best.distance ||
+      (distance === best.distance && above && !best.above)
+    ) {
+      best = { target: entry, distance, above };
+    }
+  }
+  return best?.target ?? null;
 }
 
 type ImageType = "svg" | "png" | "jpeg";
