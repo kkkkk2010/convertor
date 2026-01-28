@@ -169,7 +169,7 @@ export async function parseSlide(
     });
     if (options.debugSvg) {
       console.log(
-        `SVG_DEBUG slide=${options.slideIndex} rasterRid=${rasterRid ?? "none"} svgRid=${svgRid ?? "none"} chosenRid=${relationship.id} target=${originalTarget} exported=${src}`,
+        `SVG_DEBUG slide=${options.slideIndex} rasterRid=${rasterRid ?? "none"} svgRid=${svgRid ?? "none"} chosenRid=${relationship.id} target=${relationship.target} out=${src}`,
       );
     }
     const element: ImageElement = {
