@@ -54,6 +54,26 @@ test("SVG media is preserved with .svg extension", async () => {
   );
 });
 
+test("SVG media is preserved when svgBlip uses r:link", async () => {
+  const pptxBuffer = await buildSvgLinkPptx();
+  const zipBuffer = await convertPptxToOutZipInternal(pptxBuffer, {
+    renderBackgrounds: async (_inputPptx, outDir) => {
+      const backgroundsDir = path.join(outDir, "backgrounds");
+      await fs.mkdir(backgroundsDir, { recursive: true });
+      await fs.writeFile(path.join(backgroundsDir, "slide-1.png"), "stub");
+    },
+  });
+
+  const outZip = await JSZip.loadAsync(zipBuffer);
+  const svgTargetFile = outZip.file("assets/images/slide-1-img-1.svg");
+  assert.ok(svgTargetFile, "svg target asset should exist");
+  const svgTargetBytes = await svgTargetFile.async("string");
+  assert.ok(
+    svgTargetBytes.startsWith("<svg"),
+    "svg target bytes should be preserved",
+  );
+});
+
 async function buildSvgPptx(): Promise<Buffer> {
   const zip = new JSZip();
   zip.file(
@@ -129,6 +149,70 @@ async function buildSvgPptx(): Promise<Buffer> {
   );
   zip.file("ppt/media/image1.png", Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"));
   zip.file("ppt/media/preview.png", Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"));
+  zip.file("ppt/media/icon.svg", SVG_TARGET_PAYLOAD);
+
+  return zip.generateAsync({ type: "nodebuffer" });
+}
+
+async function buildSvgLinkPptx(): Promise<Buffer> {
+  const zip = new JSZip();
+  zip.file(
+    "[Content_Types].xml",
+    `<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Default Extension="svg" ContentType="image/svg+xml"/>
+</Types>`,
+  );
+  zip.file(
+    "ppt/presentation.xml",
+    `<?xml version="1.0" encoding="UTF-8"?>
+<p:presentation xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main">
+  <p:sldSz cx="12192000" cy="6858000"/>
+</p:presentation>`,
+  );
+  zip.file(
+    "ppt/slides/slide1.xml",
+    `<?xml version="1.0" encoding="UTF-8"?>
+<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+       xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <p:cSld>
+    <p:spTree>
+      <p:pic>
+        <p:blipFill>
+          <a:blip r:embed="rId1">
+            <a:extLst>
+              <a:ext uri="{96DAC541-7B7A-43D3-8B79-37D633B846F1}">
+                <asvg:svgBlip xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" r:link="rId2"/>
+              </a:ext>
+            </a:extLst>
+          </a:blip>
+        </p:blipFill>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="0" y="0"/>
+            <a:ext cx="914400" cy="914400"/>
+          </a:xfrm>
+        </p:spPr>
+      </p:pic>
+    </p:spTree>
+  </p:cSld>
+</p:sld>`,
+  );
+  zip.file(
+    "ppt/slides/_rels/slide1.xml.rels",
+    `<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1"
+    Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
+    Target="../media/preview.svg"/>
+  <Relationship Id="rId2"
+    Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
+    Target="../media/icon.svg"/>
+</Relationships>`,
+  );
+  zip.file("ppt/media/preview.svg", SVG_PAYLOAD);
   zip.file("ppt/media/icon.svg", SVG_TARGET_PAYLOAD);
 
   return zip.generateAsync({ type: "nodebuffer" });

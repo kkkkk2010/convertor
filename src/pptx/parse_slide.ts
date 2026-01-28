@@ -369,8 +369,8 @@ function findSvgBlipEmbed(blip: AnyRecord | undefined): string | undefined {
     const record = current as Record<string, unknown>;
     for (const [key, value] of Object.entries(record)) {
       if (key.endsWith("svgBlip") && value && typeof value === "object") {
-        const embed = (value as Record<string, unknown>)["@_r:embed"];
-        if (typeof embed === "string" && embed.length > 0) {
+        const embed = extractSvgRid(value);
+        if (embed) {
           return embed;
         }
       }
@@ -380,6 +380,34 @@ function findSvgBlipEmbed(blip: AnyRecord | undefined): string | undefined {
         stack.push(value);
       }
     }
+  }
+  return undefined;
+}
+
+function extractSvgRid(value: unknown): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const extracted = extractSvgRid(entry);
+      if (extracted) {
+        return extracted;
+      }
+    }
+    return undefined;
+  }
+  if (typeof value !== "object") {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  const embed = record["@_r:embed"];
+  if (typeof embed === "string" && embed.length > 0) {
+    return embed;
+  }
+  const link = record["@_r:link"];
+  if (typeof link === "string" && link.length > 0) {
+    return link;
   }
   return undefined;
 }
