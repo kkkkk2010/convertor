@@ -118,8 +118,10 @@ export async function parseSlide(
   let imageCount = 0;
   for (const pic of pics) {
     const blip = pic?.["p:blipFill"]?.["a:blip"];
-    const embed = blip?.["@_r:embed"];
-    if (!embed) {
+    const rasterRid = blip?.["@_r:embed"];
+    const svgRid = findSvgBlipEmbed(blip);
+    const chosenRid = svgRid ?? rasterRid;
+    if (!chosenRid) {
       continue;
     }
     imageCount += 1;
@@ -127,7 +129,11 @@ export async function parseSlide(
     const off = xfrm?.["a:off"];
     const ext = xfrm?.["a:ext"];
     const rotation = ooxmlRotToDeg(Number(xfrm?.["@_rot"]));
-    const target = resolveRelationship(options.rels, embed);
+    const rasterTarget = rasterRid
+      ? resolveRelationship(options.rels, rasterRid)
+      : null;
+    const svgTarget = svgRid ? resolveRelationship(options.rels, svgRid) : null;
+    const target = svgTarget ?? rasterTarget;
     if (!target) {
       continue;
     }
@@ -136,7 +142,7 @@ export async function parseSlide(
       path.posix.extname(normalizedTarget).toLowerCase() || ".png";
     const imageBaseName = `slide-${options.slideIndex}-img-${imageCount}`;
     let data = await options.zipReadFile(normalizedTarget);
-    if (extension === ".png" && data.length < 2000) {
+    if (!svgRid && extension === ".png" && data.length < 2000) {
       const svgTarget = findSvgAlternative(normalizedTarget, options.zipFileExists);
       if (svgTarget) {
         normalizedTarget = svgTarget;
@@ -150,6 +156,13 @@ export async function parseSlide(
       imageBaseName,
       imagesDir: options.imagesDir,
     });
+    if (process.env.PPTX_IMPORTER_DEBUG_SVG === "1") {
+      const rasterTargetLabel = rasterTarget ?? "none";
+      const svgTargetLabel = svgTarget ?? "none";
+      console.log(
+        `[svg-debug] slide ${options.slideIndex} rasterRid ${rasterRid ?? "none"} -> ${rasterTargetLabel}, svgRid ${svgRid ?? "none"} -> ${svgTargetLabel}, chosenRid ${chosenRid}, output ${src}`,
+      );
+    }
     const element: ImageElement = {
       id: `i${imageCount}`,
       type: "image",
@@ -347,6 +360,36 @@ function findSvgAlternative(
   const direct = `${base}.svg`;
   if (fileExists(direct)) {
     return direct;
+  }
+  return null;
+}
+
+function findSvgBlipEmbed(node: AnyRecord | undefined): string | null {
+  if (!node || typeof node !== "object") {
+    return null;
+  }
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const result = findSvgBlipEmbed(child as AnyRecord);
+      if (result) {
+        return result;
+      }
+    }
+    return null;
+  }
+  for (const [key, value] of Object.entries(node)) {
+    if (key === "svgBlip" || key.endsWith(":svgBlip")) {
+      const embed = (value as AnyRecord | undefined)?.["@_r:embed"];
+      if (typeof embed === "string" && embed.length > 0) {
+        return embed;
+      }
+    }
+    if (value && typeof value === "object") {
+      const result = findSvgBlipEmbed(value as AnyRecord);
+      if (result) {
+        return result;
+      }
+    }
   }
   return null;
 }
