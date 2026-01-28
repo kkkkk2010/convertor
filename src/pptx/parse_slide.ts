@@ -173,6 +173,11 @@ export async function parseSlide(
       data,
       imageBaseName,
       imagesDir: options.imagesDir,
+      debugInfo: {
+        slideIndex: options.slideIndex,
+        relTarget: originalTarget,
+        chosenTarget: normalizedTarget,
+      },
     });
     if (options.debugImages) {
       console.log(
@@ -543,16 +548,32 @@ type SaveImageOptions = {
   data: Buffer;
   imageBaseName: string;
   imagesDir: string;
+  debugInfo: {
+    slideIndex: number;
+    relTarget: string;
+    chosenTarget: string;
+  };
 };
 
 async function saveImageAsset(options: SaveImageOptions): Promise<{ src: string }> {
-  const { extension, data, imageBaseName, imagesDir } = options;
+  const { extension, data, imageBaseName, imagesDir, debugInfo } = options;
 
   if (extension === ".svg") {
+    if (!isSvgData(data)) {
+      throw new Error(
+        `Attempted to write non-SVG buffer to .svg file (slide ${debugInfo.slideIndex}, rel ${debugInfo.relTarget}, chosen ${debugInfo.chosenTarget}).`,
+      );
+    }
     const imageName = `${imageBaseName}${extension}`;
     const imagePath = path.join(imagesDir, imageName);
     await fs.writeFile(imagePath, data);
     return { src: path.posix.join("assets/images", imageName) };
+  }
+
+  if (extension === ".png" && !isPngSignature(data)) {
+    throw new Error(
+      `Attempted to write non-PNG buffer to .png file (slide ${debugInfo.slideIndex}, rel ${debugInfo.relTarget}, chosen ${debugInfo.chosenTarget}).`,
+    );
   }
 
   const imageName = `${imageBaseName}${extension}`;

@@ -9,6 +9,8 @@ const SVG_PAYLOAD =
   '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>';
 const SVG_GAMMA_PAYLOAD =
   '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"></svg>';
+const SVG_GAMMA2_PAYLOAD =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"></svg>';
 const ONE_BY_ONE_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO0nDkQAAAAASUVORK5CYII=";
 
@@ -57,6 +59,22 @@ test("SVG media is preserved with .svg extension", async () => {
   assert.ok(
     imageSources.includes("assets/images/slide-1-img-3.svg"),
     "doc.json should reference the gamma svg asset",
+  );
+
+  const gamma2SvgFile = outZip.file("assets/images/slide-1-img-4.svg");
+  assert.ok(gamma2SvgFile, "gamma2 svg asset should exist");
+  assert.ok(
+    !outZip.file("assets/images/slide-1-img-4.png"),
+    "gamma2 png preview should not be exported",
+  );
+  const gamma2SvgBytes = await gamma2SvgFile.async("string");
+  assert.ok(
+    gamma2SvgBytes.startsWith("<svg"),
+    "gamma2 svg bytes should be preserved",
+  );
+  assert.ok(
+    imageSources.includes("assets/images/slide-1-img-4.svg"),
+    "doc.json should reference the gamma2 svg asset",
   );
 });
 
@@ -119,6 +137,17 @@ async function buildSvgPptx(): Promise<Buffer> {
           </a:xfrm>
         </p:spPr>
       </p:pic>
+      <p:pic>
+        <p:blipFill>
+          <a:blip r:embed="rId4"/>
+        </p:blipFill>
+        <p:spPr>
+          <a:xfrm>
+            <a:off x="914400" y="914400"/>
+            <a:ext cx="914400" cy="914400"/>
+          </a:xfrm>
+        </p:spPr>
+      </p:pic>
     </p:spTree>
   </p:cSld>
 </p:sld>`,
@@ -136,6 +165,9 @@ async function buildSvgPptx(): Promise<Buffer> {
   <Relationship Id="rId3"
     Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
     Target="../media/image-7-2.png"/>
+  <Relationship Id="rId4"
+    Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image"
+    Target="../media/image-1-2.png"/>
 </Relationships>`,
   );
   zip.file("ppt/media/image1.png", Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"));
@@ -146,6 +178,11 @@ async function buildSvgPptx(): Promise<Buffer> {
     Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"),
   );
   zip.file("ppt/media/image-7-3.svg", SVG_GAMMA_PAYLOAD);
+  zip.file(
+    "ppt/media/image-1-2.png",
+    Buffer.from(ONE_BY_ONE_PNG_BASE64, "base64"),
+  );
+  zip.file("ppt/media/image-1-3.svg", SVG_GAMMA2_PAYLOAD);
 
   return zip.generateAsync({ type: "nodebuffer" });
 }
