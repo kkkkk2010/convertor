@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Converter artifacts
+out*.zip
+pptx_dump/
+out_unzipped/
+
+# Test / local PPTX files
+*.pptx
+*.ppt
+*.ppsx
