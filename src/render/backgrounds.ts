@@ -2,11 +2,19 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
 import { spawn, spawnSync } from "node:child_process";
+import { performance } from "node:perf_hooks";
 import { getConversionLimitsFromEnv } from "../limits";
+
+export type BackgroundRenderTimings = {
+  libreofficeMs?: number;
+  pdftoppmMs?: number;
+  totalMs?: number;
+};
 
 export async function renderBackgrounds(
   inputPptx: string,
   outDir: string,
+  timings: BackgroundRenderTimings = {},
 ): Promise<void> {
   const libreOfficeBinary = resolveLibreOfficeBinary();
   if (!libreOfficeBinary) {
@@ -30,11 +38,13 @@ export async function renderBackgrounds(
 
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "pptx-import-"));
   try {
+    const totalStart = performance.now();
     const pptxName = path.basename(inputPptx);
     const pdfName = pptxName.replace(/\.pptx$/i, ".pdf");
     const pdfPath = path.join(tmpDir, pdfName);
     const limits = getConversionLimitsFromEnv();
 
+    const libreOfficeStart = performance.now();
     await runCommandWithTimeout(
       libreOfficeBinary,
       [
@@ -47,14 +57,18 @@ export async function renderBackgrounds(
       ],
       limits.libreOfficeTimeoutMs,
     );
+    timings.libreofficeMs = performance.now() - libreOfficeStart;
 
+    const pdftoppmStart = performance.now();
     await runCommandWithTimeout(
       "pdftoppm",
       ["-png", "-r", "144", pdfPath, path.join(backgroundsDir, "slide")],
       limits.pdftoppmTimeoutMs,
     );
+    timings.pdftoppmMs = performance.now() - pdftoppmStart;
 
     await normalizeBackgroundNames(backgroundsDir);
+    timings.totalMs = performance.now() - totalStart;
   } finally {
     await fs.rm(tmpDir, { recursive: true, force: true });
   }

@@ -3,11 +3,12 @@ import fsSync from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { PassThrough } from "node:stream";
+import { performance } from "node:perf_hooks";
 import archiver from "archiver";
 import JSZip from "jszip";
 import { readPptxBuffer, readXml, listSlidePaths, getSlideRelsPath } from "./pptx/read";
 import { parseSlide, emuToPx } from "./pptx/parse_slide";
-import { renderBackgrounds } from "./render/backgrounds";
+import { BackgroundRenderTimings, renderBackgrounds } from "./render/backgrounds";
 import { DocJson } from "./types";
 import { createCleanPptx } from "./pptx/clean_pptx";
 import { ThemeColorMap, parseThemeColors } from "./pptx/theme";
@@ -26,13 +27,27 @@ type SlideXml = Record<string, unknown>;
 type RelsXml = Record<string, unknown>;
 
 export type ConversionDependencies = {
-  renderBackgrounds: typeof renderBackgrounds;
+  renderBackgrounds: (
+    inputPptx: string,
+    outDir: string,
+    timings?: BackgroundRenderTimings,
+  ) => Promise<void>;
 };
 
 export type ConversionResult = {
   zipBuffer: Buffer;
   slideCount: number;
   totalImages: number;
+  timings?: ConversionTimings;
+};
+
+export type ConversionTimings = {
+  unzipMs?: number;
+  parseMs?: number;
+  libreofficeMs?: number;
+  pdftoppmMs?: number;
+  packZipMs?: number;
+  totalMs?: number;
 };
 
 export async function convertPptxToOutZip(
@@ -48,6 +63,7 @@ export async function convertPptxToOutZipWithDependencies(
   inputBuffer: Buffer,
   dependencies: ConversionDependencies,
   limits: ConversionLimits = getConversionLimitsFromEnv(),
+  timings?: ConversionTimings,
 ): Promise<ConversionResult> {
   if (inputBuffer.length === 0) {
     throw new Error("Input buffer is empty.");
@@ -66,12 +82,18 @@ export async function convertPptxToOutZipWithDependencies(
   await fs.writeFile(tempInputPath, inputBuffer);
 
   try {
+    const totalStart = performance.now();
+    const unzipStart = performance.now();
     const archive = await readPptxBuffer(inputBuffer, limits);
+    if (timings) {
+      timings.unzipMs = performance.now() - unzipStart;
+    }
     const slidePaths = listSlidePaths(archive.zip);
     if (slidePaths.length === 0) {
       throw new Error("No slides found in PPTX.");
     }
 
+    const parseStart = performance.now();
     let themeColors: ThemeColorMap = {};
     try {
       const themeXml = await readXml<Record<string, unknown>>(
@@ -171,7 +193,20 @@ export async function convertPptxToOutZipWithDependencies(
       );
     }
 
-    await dependencies.renderBackgrounds(backgroundPptxPath, tempOutDir);
+    const backgroundTimings: BackgroundRenderTimings = {};
+    await dependencies.renderBackgrounds(
+      backgroundPptxPath,
+      tempOutDir,
+      backgroundTimings,
+    );
+    if (timings) {
+      if (backgroundTimings.libreofficeMs != null) {
+        timings.libreofficeMs = backgroundTimings.libreofficeMs;
+      }
+      if (backgroundTimings.pdftoppmMs != null) {
+        timings.pdftoppmMs = backgroundTimings.pdftoppmMs;
+      }
+    }
 
     await fs.writeFile(
       path.join(tempOutDir, "doc.json"),
@@ -179,13 +214,23 @@ export async function convertPptxToOutZipWithDependencies(
       "utf-8",
     );
 
+    if (timings) {
+      timings.parseMs = performance.now() - parseStart;
+    }
+
+    const packZipStart = performance.now();
     const zipBuffer = await buildZipBuffer(tempOutDir);
     await validateZipBuffer(zipBuffer, slidePaths.length);
     console.log(`wrote zip file size=${zipBuffer.length}`);
+    if (timings) {
+      timings.packZipMs = performance.now() - packZipStart;
+      timings.totalMs = performance.now() - totalStart;
+    }
     return {
       zipBuffer,
       slideCount: slidePaths.length,
       totalImages,
+      timings,
     };
   } finally {
     await fs.rm(tempOutDir, { recursive: true, force: true });

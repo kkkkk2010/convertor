@@ -50,6 +50,26 @@ node dist/importer.js --input <path/to/input.pptx> --out <path/to/outDir>
 node dist/importer.js --input ./Tehnologii-budushego.pptx --out ./out
 ```
 
+## HTTP service (internal)
+
+Start the service:
+
+```bash
+npm run build
+npm run start:server
+```
+
+Example request (raw PPTX body):
+
+```bash
+curl -X POST http://localhost:3001/convert \
+  -H "Content-Type: application/vnd.openxmlformats-officedocument.presentationml.presentation" \
+  --data-binary @./input.pptx \
+  --output out.zip
+```
+
+On success, the response body is the `out.zip` bytes and includes `X-Request-Id`.
+
 ## Library API
 
 Use the programmatic API to get an in-memory out.zip buffer:
@@ -73,6 +93,37 @@ The conversion enforces configurable limits (defaults shown):
 - `PPTX_MAX_FILE_UNCOMPRESSED_BYTES` (default: 52428800)
 - `PPTX_LIBREOFFICE_TIMEOUT_MS` (default: 120000)
 - `PPTX_PDFTOPPM_TIMEOUT_MS` (default: 120000)
+
+## Service concurrency & queue
+
+The HTTP service accepts the following env vars (defaults shown):
+
+- `PPTX_IMPORTER_PORT` (default: 3001)
+- `PPTX_IMPORTER_MAX_CONCURRENT` (default: 2)
+- `PPTX_IMPORTER_MAX_QUEUE` (default: 10)
+- `PPTX_IMPORTER_QUEUE_WAIT_TIMEOUT_MS` (default: 120000)
+
+If the queue is full, the service returns HTTP 429 with `QUEUE_FULL`. If a queued request
+waits longer than the timeout, the service returns HTTP 503 with `QUEUE_TIMEOUT`.
+
+## Error codes
+
+HTTP errors are JSON:
+
+```json
+{ "code": "INVALID_PPTX", "message": "Invalid or unsupported PPTX.", "requestId": "..." }
+```
+
+| Code | Meaning |
+| --- | --- |
+| `LIMIT_EXCEEDED` | Input or zip limits exceeded. |
+| `TIMEOUT_LIBREOFFICE` | LibreOffice conversion timed out. |
+| `TIMEOUT_PDFTOPPM` | pdftoppm conversion timed out. |
+| `INVALID_PPTX` | Invalid ZIP/PPTX or missing required parts. |
+| `UNSUPPORTED_FEATURE` | Unsupported PPTX feature. |
+| `QUEUE_FULL` | Queue is full; retry later. |
+| `QUEUE_TIMEOUT` | Queue wait timeout exceeded. |
+| `INTERNAL` | Unexpected server error. |
 
 ## Output structure
 
@@ -111,3 +162,11 @@ Run:
 docker run --rm -v "$PWD:/work" -w /work pptx-importer \
   node dist/importer.js --input ./input.pptx --out ./out
 ```
+
+### Docker Compose (service)
+
+```bash
+docker compose up --build
+```
+
+The converter is reachable inside the Docker network at `http://converter:3001/convert`.

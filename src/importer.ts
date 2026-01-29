@@ -4,6 +4,7 @@ import path from "node:path";
 import { convertPptxToOutZipWithDependencies } from "./convert";
 import { renderBackgrounds } from "./render/backgrounds";
 import { getConversionLimitsFromEnv } from "./limits";
+import { toAppError } from "./errors";
 
 async function main() {
   try {
@@ -52,9 +53,8 @@ async function main() {
       `✔ Exported presentation to ${path.basename(outZipPath)} (${slideCount} slides, ${totalImages} images)`,
     );
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unknown error occurred.";
-    console.error(message);
+    const appError = toAppError(error);
+    console.error(`${appError.code}: ${appError.message}`);
     process.exit(1);
   }
 }
@@ -80,7 +80,7 @@ function parseArgs(argv: string[]): { input: string; outRaw: string } {
 }
 
 async function ensureInput(inputPath: string, maxInputBytes: number): Promise<void> {
-  let stat: fsSync.Stats | null = null;
+  let stat: { isFile: () => boolean; size: number } | null = null;
   try {
     stat = await fs.stat(inputPath);
   } catch {
