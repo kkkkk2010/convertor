@@ -207,7 +207,13 @@ export function createConverterServer(options: ServerOptions = {}): any {
       }
       res.statusCode = 200;
       res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Length", String(result.zipBuffer.length));
       res.end(result.zipBuffer);
+      logger({
+        level: "info",
+        requestId,
+        event: "http_response_end",
+      });
       logger({
         level: "info",
         requestId,
@@ -230,6 +236,12 @@ export function createConverterServer(options: ServerOptions = {}): any {
             requestId,
           }),
         );
+        logger({
+          level: "info",
+          requestId,
+          event: "http_response_end",
+          errorCode: appError.code,
+        });
       }
       logger({
         level: appError.code === "QUEUE_FULL" ? "warn" : "error",

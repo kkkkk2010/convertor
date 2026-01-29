@@ -70,18 +70,22 @@ function createConvertHandler(delayMs = 0): ConvertHandler {
 async function sendRequest(
   port: number,
   body: Buffer,
+  timeoutMs = 2000,
 ): Promise<{
   status: number;
   headers: Record<string, string | string[] | undefined>;
   body: Buffer;
 }> {
   return new Promise((resolve, reject) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     const req = http.request(
       {
         hostname: "127.0.0.1",
         port,
         path: "/convert",
         method: "POST",
+        signal: controller.signal,
         headers: {
           "Content-Type":
             "application/vnd.openxmlformats-officedocument.presentationml.presentation",
@@ -92,6 +96,7 @@ async function sendRequest(
         const chunks: Buffer[] = [];
         res.on("data", (chunk: Buffer) => chunks.push(chunk));
         res.on("end", () => {
+          clearTimeout(timeoutId);
           resolve({
             status: res.statusCode ?? 0,
             headers: res.headers,
@@ -100,7 +105,10 @@ async function sendRequest(
         });
       },
     );
-    req.on("error", reject);
+    req.on("error", (error: unknown) => {
+      clearTimeout(timeoutId);
+      reject(error);
+    });
     req.write(body);
     req.end();
   });
@@ -174,9 +182,9 @@ async function runQueueFullTest(): Promise<void> {
   });
   const port = await listen(server);
   try {
-    const first = sendRequest(port, inputBuffer);
+    const first = sendRequest(port, inputBuffer, 4000);
     await new Promise((resolve) => setTimeout(resolve, 50));
-    const second = await sendRequest(port, inputBuffer);
+    const second = await sendRequest(port, inputBuffer, 2000);
     if (second.status !== 429) {
       throw new Error(`Expected 429, got ${second.status}`);
     }
@@ -213,9 +221,9 @@ async function runQueueTimeoutTest(): Promise<void> {
   });
   const port = await listen(server);
   try {
-    const first = sendRequest(port, inputBuffer);
+    const first = sendRequest(port, inputBuffer, 4000);
     await new Promise((resolve) => setTimeout(resolve, 10));
-    const second = await sendRequest(port, inputBuffer);
+    const second = await sendRequest(port, inputBuffer, 2000);
     if (second.status !== 503) {
       throw new Error(`Expected 503, got ${second.status}`);
     }
