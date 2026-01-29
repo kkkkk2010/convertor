@@ -264,7 +264,7 @@ async function buildZipBuffer(sourceDir: string): Promise<Buffer> {
   output.on("data", (chunk: Buffer) => chunks.push(chunk));
 
   const completion = new Promise<Buffer>((resolve, reject) => {
-    output.on("end", () => resolve(Buffer.concat(chunks)));
+    output.on("finish", () => resolve(Buffer.concat(chunks)));
     output.on("error", (error: Error) => reject(error));
     archive.on("error", (error: Error) => reject(error));
   });
