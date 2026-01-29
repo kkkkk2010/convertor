@@ -42,6 +42,11 @@ declare module "node:os" {
 
 declare module "node:stream" {
   export const PassThrough: any;
+  export const Readable: any;
+}
+
+declare module "node:stream/promises" {
+  export const pipeline: any;
 }
 
 declare module "node:perf_hooks" {

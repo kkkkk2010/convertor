@@ -1,4 +1,6 @@
 import http from "node:http";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
 import { randomUUID } from "node:crypto";
 import { convertPptxToOutZipWithDependencies, ConversionResult, ConversionTimings } from "./convert";
 import { renderBackgrounds } from "./render/backgrounds";
@@ -16,6 +18,7 @@ type LogEntry = {
   slidesCount?: number;
   imagesCount?: number;
   errorCode?: ErrorCode;
+  errorMessage?: string;
   method?: string;
   url?: string;
   contentType?: string;
@@ -167,6 +170,14 @@ export function createConverterServer(options: ServerOptions = {}): any {
     }
 
     let closed = false;
+    let released = false;
+    const releaseOnce = () => {
+      if (!release || released) {
+        return;
+      }
+      released = true;
+      release();
+    };
     req.on("aborted", () => {
       closed = true;
       queue.cancel(requestId);
@@ -176,6 +187,7 @@ export function createConverterServer(options: ServerOptions = {}): any {
       queue.cancel(requestId);
     });
     res.on("finish", () => {
+      releaseOnce();
       if (!debugHttp) {
         return;
       }
@@ -186,6 +198,7 @@ export function createConverterServer(options: ServerOptions = {}): any {
       });
     });
     res.on("close", () => {
+      releaseOnce();
       if (!debugHttp) {
         return;
       }
@@ -283,32 +296,52 @@ export function createConverterServer(options: ServerOptions = {}): any {
       res.statusCode = 200;
       res.setHeader("Content-Type", "application/zip");
       res.setHeader("Content-Length", String(result.zipBuffer.length));
-      if (debugHttp) {
-        logger({
-          level: "info",
-          requestId,
-          event: "before_res_end",
-          outputBytes: result.zipBuffer.length,
-        });
+      if (!closed) {
+        if (debugHttp) {
+          logger({
+            level: "info",
+            requestId,
+            event: "before_pipeline",
+            outputBytes: result.zipBuffer.length,
+          });
+        }
+        try {
+          await pipeline(Readable.from(result.zipBuffer), res);
+          if (debugHttp) {
+            logger({
+              level: "info",
+              requestId,
+              event: "after_pipeline",
+              outputBytes: result.zipBuffer.length,
+            });
+          }
+          logger({
+            level: "info",
+            requestId,
+            event: "http_response_end",
+          });
+          return;
+        } catch (pipelineError) {
+          if (debugHttp) {
+            const message =
+              pipelineError instanceof Error
+                ? pipelineError.message
+                : String(pipelineError);
+            logger({
+              level: "error",
+              requestId,
+              event: "pipeline_error",
+              errorCode: toAppError(pipelineError).code,
+              errorMessage: message,
+            });
+          }
+          throw pipelineError;
+        }
       }
-      res.end(result.zipBuffer);
-      if (debugHttp) {
-        logger({
-          level: "info",
-          requestId,
-          event: "after_res_end",
-          outputBytes: result.zipBuffer.length,
-        });
-      }
-      logger({
-        level: "info",
-        requestId,
-        event: "http_response_end",
-      });
       return;
     } catch (error) {
       const appError = toAppError(error);
-      if (!closed) {
+      if (!closed && !res.headersSent) {
         res.statusCode = statusForError(appError.code);
         res.setHeader("Content-Type", "application/json");
         res.end(
@@ -334,9 +367,7 @@ export function createConverterServer(options: ServerOptions = {}): any {
         errorCode: appError.code,
       });
     } finally {
-      if (release) {
-        release();
-      }
+      releaseOnce();
     }
   });
 }

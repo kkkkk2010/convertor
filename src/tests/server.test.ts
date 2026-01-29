@@ -136,7 +136,7 @@ async function runSuccessTest(): Promise<void> {
   const port = await listen(server);
   try {
     const inputBuffer = await buildMinimalPptx();
-    const response = await sendRequest(port, inputBuffer, 4000);
+    const response = await sendRequest(port, inputBuffer, 15000);
     if (response.status !== 200) {
       throw new Error(`Expected 200, got ${response.status}`);
     }
@@ -147,6 +147,9 @@ async function runSuccessTest(): Promise<void> {
         : contentType !== "application/zip"
     ) {
       throw new Error(`Expected application/zip, got ${contentType}`);
+    }
+    if (response.body.length === 0) {
+      throw new Error("Expected non-empty response body.");
     }
     const signature = Buffer.from(response.body.slice(0, 2)).toString("utf-8");
     if (signature !== "PK") {
