@@ -16,6 +16,10 @@ type LogEntry = {
   slidesCount?: number;
   imagesCount?: number;
   errorCode?: ErrorCode;
+  method?: string;
+  url?: string;
+  contentType?: string;
+  contentLength?: number;
 };
 
 type Logger = (entry: LogEntry) => void;
@@ -145,6 +149,7 @@ export function createConverterServer(options: ServerOptions = {}): any {
   const logger = options.logger ?? defaultLogger;
   const convert = options.convert ?? defaultConvertHandler();
   const limits = getConversionLimitsFromEnv();
+  const debugHttp = process.env.PPTX_IMPORTER_DEBUG_HTTP === "1";
 
   return http.createServer(async (req: any, res: any) => {
     const requestId = randomUUID();
@@ -170,6 +175,26 @@ export function createConverterServer(options: ServerOptions = {}): any {
       closed = true;
       queue.cancel(requestId);
     });
+    res.on("finish", () => {
+      if (!debugHttp) {
+        return;
+      }
+      logger({
+        level: "info",
+        requestId,
+        event: "http_res_finish",
+      });
+    });
+    res.on("close", () => {
+      if (!debugHttp) {
+        return;
+      }
+      logger({
+        level: "info",
+        requestId,
+        event: "http_res_close",
+      });
+    });
 
     logger({
       level: "info",
@@ -188,6 +213,17 @@ export function createConverterServer(options: ServerOptions = {}): any {
         return;
       }
       const contentType = req.headers["content-type"]?.split(";")[0]?.trim();
+      if (debugHttp) {
+        logger({
+          level: "info",
+          requestId,
+          event: "http_req",
+          method: req.method,
+          url: req.url,
+          contentType,
+          contentLength: Number(req.headers["content-length"]) || undefined,
+        });
+      }
       if (
         contentType &&
         contentType !==
@@ -200,20 +236,27 @@ export function createConverterServer(options: ServerOptions = {}): any {
       if (inputBuffer.length === 0) {
         throw new AppError("INVALID_PPTX", "Empty request body.");
       }
+      if (debugHttp) {
+        logger({
+          level: "info",
+          requestId,
+          event: "body_read_done",
+          inputBytes,
+        });
+      }
 
       const result = await convert(inputBuffer, timings);
       if (closed) {
         return;
       }
-      res.statusCode = 200;
-      res.setHeader("Content-Type", "application/zip");
-      res.setHeader("Content-Length", String(result.zipBuffer.length));
-      res.end(result.zipBuffer);
-      logger({
-        level: "info",
-        requestId,
-        event: "http_response_end",
-      });
+      if (debugHttp) {
+        logger({
+          level: "info",
+          requestId,
+          event: "convert_done",
+          outputBytes: result.zipBuffer.length,
+        });
+      }
       logger({
         level: "info",
         requestId,
@@ -224,6 +267,24 @@ export function createConverterServer(options: ServerOptions = {}): any {
         slidesCount: result.slideCount,
         imagesCount: result.totalImages,
       });
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "application/zip");
+      res.setHeader("Content-Length", String(result.zipBuffer.length));
+      if (debugHttp) {
+        logger({
+          level: "info",
+          requestId,
+          event: "http_res_end",
+          outputBytes: result.zipBuffer.length,
+        });
+      }
+      res.end(result.zipBuffer);
+      logger({
+        level: "info",
+        requestId,
+        event: "http_response_end",
+      });
+      return;
     } catch (error) {
       const appError = toAppError(error);
       if (!closed) {

@@ -17,6 +17,7 @@ declare class Buffer extends Uint8Array {
   static concat: (list: Buffer[]) => Buffer;
   static alloc: (size: number) => Buffer;
   toString: (encoding?: string) => string;
+  equals: (otherBuffer: Buffer) => boolean;
 }
 
 declare const setTimeout: (

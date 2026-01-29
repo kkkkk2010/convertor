@@ -136,9 +136,21 @@ async function runSuccessTest(): Promise<void> {
   const port = await listen(server);
   try {
     const inputBuffer = await buildMinimalPptx();
-    const response = await sendRequest(port, inputBuffer);
+    const response = await sendRequest(port, inputBuffer, 4000);
     if (response.status !== 200) {
       throw new Error(`Expected 200, got ${response.status}`);
+    }
+    const contentType = response.headers["content-type"];
+    if (
+      Array.isArray(contentType)
+        ? !contentType.includes("application/zip")
+        : contentType !== "application/zip"
+    ) {
+      throw new Error(`Expected application/zip, got ${contentType}`);
+    }
+    const signature = Buffer.from(response.body.slice(0, 2)).toString("utf-8");
+    if (signature !== "PK") {
+      throw new Error("Expected ZIP signature in response body.");
     }
     const outZip = await JSZip.loadAsync(response.body);
     const files = Object.keys(outZip.files);
