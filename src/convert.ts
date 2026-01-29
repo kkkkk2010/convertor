@@ -4,6 +4,7 @@ import path from "node:path";
 import os from "node:os";
 import { PassThrough } from "node:stream";
 import archiver from "archiver";
+import JSZip from "jszip";
 import { readPptxBuffer, readXml, listSlidePaths, getSlideRelsPath } from "./pptx/read";
 import { parseSlide, emuToPx } from "./pptx/parse_slide";
 import { renderBackgrounds } from "./render/backgrounds";
@@ -179,11 +180,7 @@ export async function convertPptxToOutZipWithDependencies(
     );
 
     const zipBuffer = await buildZipBuffer(tempOutDir);
-    if (zipBuffer.length <= 1024) {
-      throw new Error(
-        `Expected zip file larger than 1KB, got ${zipBuffer.length} bytes.`,
-      );
-    }
+    await validateZipBuffer(zipBuffer, slidePaths.length);
     console.log(`wrote zip file size=${zipBuffer.length}`);
     return {
       zipBuffer,
@@ -242,4 +239,31 @@ async function buildZipBuffer(sourceDir: string): Promise<Buffer> {
   }
 
   return buffer;
+}
+
+async function validateZipBuffer(
+  zipBuffer: Buffer,
+  expectedSlideCount: number,
+): Promise<void> {
+  const zip = await JSZip.loadAsync(zipBuffer);
+  const docEntry = zip.file("doc.json");
+  if (!docEntry) {
+    throw new Error("Missing doc.json in output zip.");
+  }
+  const docRaw = await docEntry.async("string");
+  const doc = JSON.parse(docRaw) as DocJson;
+  if (!doc.slides || doc.slides.length !== expectedSlideCount) {
+    throw new Error("doc.json slide count mismatch.");
+  }
+  const zipFiles = new Set(Object.keys(zip.files));
+  for (const slide of doc.slides) {
+    if (!zipFiles.has(slide.background.src)) {
+      throw new Error(`Missing background asset: ${slide.background.src}`);
+    }
+    for (const element of slide.elements) {
+      if (element.type === "image" && !zipFiles.has(element.src)) {
+        throw new Error(`Missing image asset: ${element.src}`);
+      }
+    }
+  }
 }
