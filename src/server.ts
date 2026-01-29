@@ -182,10 +182,6 @@ export function createConverterServer(options: ServerOptions = {}): any {
       closed = true;
       queue.cancel(requestId);
     });
-    req.on("close", () => {
-      closed = true;
-      queue.cancel(requestId);
-    });
     res.on("finish", () => {
       releaseOnce();
       if (!debugHttp) {
@@ -198,6 +194,7 @@ export function createConverterServer(options: ServerOptions = {}): any {
       });
     });
     res.on("close", () => {
+      closed = true;
       releaseOnce();
       if (!debugHttp) {
         return;
