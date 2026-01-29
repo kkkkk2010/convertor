@@ -1,10 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import os from "node:os";
-import { execFile, spawnSync } from "node:child_process";
-import { promisify } from "node:util";
-
-const execFileAsync = promisify(execFile);
+import { spawn, spawnSync } from "node:child_process";
+import { getConversionLimitsFromEnv } from "../limits";
 
 export async function renderBackgrounds(
   inputPptx: string,
@@ -31,28 +29,35 @@ export async function renderBackgrounds(
   await fs.mkdir(backgroundsDir, { recursive: true });
 
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "pptx-import-"));
-  const pptxName = path.basename(inputPptx);
-  const pdfName = pptxName.replace(/\.pptx$/i, ".pdf");
-  const pdfPath = path.join(tmpDir, pdfName);
+  try {
+    const pptxName = path.basename(inputPptx);
+    const pdfName = pptxName.replace(/\.pptx$/i, ".pdf");
+    const pdfPath = path.join(tmpDir, pdfName);
+    const limits = getConversionLimitsFromEnv();
 
-  await execFileAsync(libreOfficeBinary, [
-    "--headless",
-    "--convert-to",
-    "pdf",
-    "--outdir",
-    tmpDir,
-    inputPptx,
-  ]);
+    await runCommandWithTimeout(
+      libreOfficeBinary,
+      [
+        "--headless",
+        "--convert-to",
+        "pdf",
+        "--outdir",
+        tmpDir,
+        inputPptx,
+      ],
+      limits.libreOfficeTimeoutMs,
+    );
 
-  await execFileAsync("pdftoppm", [
-    "-png",
-    "-r",
-    "144",
-    pdfPath,
-    path.join(backgroundsDir, "slide"),
-  ]);
+    await runCommandWithTimeout(
+      "pdftoppm",
+      ["-png", "-r", "144", pdfPath, path.join(backgroundsDir, "slide")],
+      limits.pdftoppmTimeoutMs,
+    );
 
-  await normalizeBackgroundNames(backgroundsDir);
+    await normalizeBackgroundNames(backgroundsDir);
+  } finally {
+    await fs.rm(tmpDir, { recursive: true, force: true });
+  }
 }
 
 export function resolveLibreOfficeBinary(): string | null {
@@ -96,11 +101,11 @@ export function isBinaryAvailable(command: string): boolean {
 async function normalizeBackgroundNames(backgroundsDir: string): Promise<void> {
   const files = await fs.readdir(backgroundsDir);
   const slideFiles = files
-    .filter((file) => file.startsWith("slide-") && file.endsWith(".png"))
-    .sort((a, b) => extractNumber(a) - extractNumber(b));
+    .filter((file: string) => file.startsWith("slide-") && file.endsWith(".png"))
+    .sort((a: string, b: string) => extractNumber(a) - extractNumber(b));
 
   await Promise.all(
-    slideFiles.map(async (file, index) => {
+    slideFiles.map(async (file: string, index: number) => {
       const target = `slide-${index + 1}.png`;
       if (file === target) {
         return;
@@ -119,4 +124,50 @@ function extractNumber(fileName: string): number {
     return Number.MAX_SAFE_INTEGER;
   }
   return Number(match[1]);
+}
+
+function runCommandWithTimeout(
+  command: string,
+  args: string[],
+  timeoutMs: number,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { stdio: "ignore" });
+    let settled = false;
+    const timeoutId = setTimeout(() => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      try {
+        child.kill("SIGKILL");
+      } catch {
+        child.kill();
+      }
+      reject(new Error(`${command} timed out after ${timeoutMs}ms.`));
+    }, timeoutMs);
+
+    child.on("error", (error: Error) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timeoutId);
+      reject(error);
+    });
+
+    child.on("exit", (code: number | null, signal: NodeJS.Signals | null) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timeoutId);
+      if (code === 0) {
+        resolve();
+        return;
+      }
+      const details = signal ? `signal ${signal}` : `code ${code ?? "unknown"}`;
+      reject(new Error(`${command} failed with ${details}.`));
+    });
+  });
 }
