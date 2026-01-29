@@ -244,7 +244,13 @@ export function createConverterServer(options: ServerOptions = {}): any {
           inputBytes,
         });
       }
-
+      if (debugHttp) {
+        logger({
+          level: "info",
+          requestId,
+          event: "before_convert",
+        });
+      }
       const result = await convert(inputBuffer, timings);
       if (closed) {
         return;
@@ -253,8 +259,15 @@ export function createConverterServer(options: ServerOptions = {}): any {
         logger({
           level: "info",
           requestId,
-          event: "convert_done",
+          event: "after_convert",
           outputBytes: result.zipBuffer.length,
+        });
+      }
+      if (debugHttp) {
+        logger({
+          level: "info",
+          requestId,
+          event: "before_headers",
         });
       }
       logger({
@@ -274,11 +287,19 @@ export function createConverterServer(options: ServerOptions = {}): any {
         logger({
           level: "info",
           requestId,
-          event: "http_res_end",
+          event: "before_res_end",
           outputBytes: result.zipBuffer.length,
         });
       }
       res.end(result.zipBuffer);
+      if (debugHttp) {
+        logger({
+          level: "info",
+          requestId,
+          event: "after_res_end",
+          outputBytes: result.zipBuffer.length,
+        });
+      }
       logger({
         level: "info",
         requestId,
