@@ -19,6 +19,9 @@ type LogEntry = {
   imagesCount?: number;
   errorCode?: ErrorCode;
   errorMessage?: string;
+  errorName?: string;
+  errorStack?: string;
+  errorCause?: string;
   method?: string;
   url?: string;
   contentType?: string;
@@ -26,6 +29,7 @@ type LogEntry = {
 };
 
 type Logger = (entry: LogEntry) => void;
+type Phase = "reading_body" | "converting" | "writing_response";
 
 export type ConvertHandler = (
   inputBuffer: Buffer,
@@ -65,6 +69,45 @@ function buildQueueOptionsFromEnv(): QueueOptions {
 
 function defaultLogger(entry: LogEntry): void {
   console.log(JSON.stringify(entry));
+}
+
+function getErrorDetails(error: unknown): {
+  errorName?: string;
+  errorMessage?: string;
+  errorStack?: string;
+  errorCause?: string;
+  errorCode?: string;
+} {
+  if (!(error instanceof Error)) {
+    return {
+      errorMessage: String(error),
+    };
+  }
+  const cause = (error as { cause?: unknown }).cause;
+  let errorCause: string | undefined;
+  if (cause !== undefined) {
+    try {
+      errorCause = JSON.stringify(cause);
+    } catch {
+      errorCause = String(cause);
+    }
+  }
+  return {
+    errorName: error.name,
+    errorMessage: error.message,
+    errorStack: error.stack,
+    errorCause,
+    errorCode: (error as { code?: string }).code,
+  };
+}
+
+function isClientDisconnect(error: unknown): boolean {
+  const code = (error as { code?: string } | null)?.code;
+  return (
+    code === "EPIPE" ||
+    code === "ECONNRESET" ||
+    code === "ERR_STREAM_PREMATURE_CLOSE"
+  );
 }
 
 function statusForError(code: ErrorCode): number {
@@ -215,6 +258,7 @@ export function createConverterServer(options: ServerOptions = {}): any {
     let release: (() => void) | null = null;
     const timings: ConversionTimings = {};
     let inputBytes = 0;
+    let phase: Phase = "reading_body";
 
     try {
       release = await queue.acquire(requestId);
@@ -254,6 +298,7 @@ export function createConverterServer(options: ServerOptions = {}): any {
           inputBytes,
         });
       }
+      phase = "converting";
       if (debugHttp) {
         logger({
           level: "info",
@@ -294,6 +339,7 @@ export function createConverterServer(options: ServerOptions = {}): any {
       res.setHeader("Content-Type", "application/zip");
       res.setHeader("Content-Length", String(result.zipBuffer.length));
       if (!closed) {
+        phase = "writing_response";
         if (debugHttp) {
           logger({
             level: "info",
@@ -337,6 +383,20 @@ export function createConverterServer(options: ServerOptions = {}): any {
       }
       return;
     } catch (error) {
+      const details = getErrorDetails(error);
+      if (phase === "writing_response" && isClientDisconnect(error)) {
+        logger({
+          level: "warn",
+          requestId,
+          event: "client_disconnected",
+          errorCode: "INTERNAL",
+          errorName: details.errorName,
+          errorMessage: details.errorMessage,
+          errorStack: debugHttp ? details.errorStack : undefined,
+          errorCause: debugHttp ? details.errorCause : undefined,
+        });
+        return;
+      }
       const appError = toAppError(error);
       if (!closed && !res.headersSent) {
         res.statusCode = statusForError(appError.code);
@@ -362,6 +422,10 @@ export function createConverterServer(options: ServerOptions = {}): any {
         timingsMs: timings,
         inputBytes: inputBytes || undefined,
         errorCode: appError.code,
+        errorName: details.errorName,
+        errorMessage: details.errorMessage,
+        errorStack: appError.code === "INTERNAL" || debugHttp ? details.errorStack : undefined,
+        errorCause: appError.code === "INTERNAL" || debugHttp ? details.errorCause : undefined,
       });
     } finally {
       releaseOnce();

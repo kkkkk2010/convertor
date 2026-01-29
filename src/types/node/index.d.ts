@@ -15,7 +15,7 @@ declare const module: any;
 declare class Buffer extends Uint8Array {
   static from: (...args: unknown[]) => Buffer;
   static concat: (list: Buffer[]) => Buffer;
-  static alloc: (size: number) => Buffer;
+  static alloc: (size: number, fill?: string | number | Buffer) => Buffer;
   toString: (encoding?: string) => string;
   equals: (otherBuffer: Buffer) => boolean;
 }

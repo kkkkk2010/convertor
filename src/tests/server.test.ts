@@ -253,10 +253,49 @@ async function runQueueTimeoutTest(): Promise<void> {
   }
 }
 
+async function runLargeResponseTest(): Promise<void> {
+  const largeBuffer = Buffer.alloc(5 * 1024 * 1024, "a");
+  const convertHandler: ConvertHandler = async (_buffer, timings) => {
+    return {
+      zipBuffer: largeBuffer,
+      slideCount: 1,
+      totalImages: 0,
+      timings,
+    };
+  };
+  const server = createConverterServer({
+    queue: { maxConcurrent: 1, maxQueue: 1, queueWaitTimeoutMs: 1000 },
+    convert: convertHandler,
+  });
+  const port = await listen(server);
+  try {
+    const inputBuffer = await buildMinimalPptx();
+    const response = await sendRequest(port, inputBuffer, 15000);
+    if (response.status !== 200) {
+      throw new Error(`Expected 200, got ${response.status}`);
+    }
+    const contentLength = response.headers["content-length"];
+    const lengthValue = Array.isArray(contentLength)
+      ? Number(contentLength[0])
+      : Number(contentLength);
+    if (!Number.isFinite(lengthValue) || lengthValue !== largeBuffer.length) {
+      throw new Error(`Expected content-length ${largeBuffer.length}, got ${contentLength}`);
+    }
+    if (response.body.length !== largeBuffer.length) {
+      throw new Error(
+        `Expected body length ${largeBuffer.length}, got ${response.body.length}`,
+      );
+    }
+  } finally {
+    server.close();
+  }
+}
+
 async function main(): Promise<void> {
   await runSuccessTest();
   await runQueueFullTest();
   await runQueueTimeoutTest();
+  await runLargeResponseTest();
   console.log("server tests passed");
 }
 

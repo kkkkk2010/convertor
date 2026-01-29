@@ -58,9 +58,26 @@ export function toAppError(error: unknown): AppError {
   }
   const message = messageFromError(error);
   const normalized = message.toLowerCase();
+  const errorCode = (error as { code?: string } | null)?.code;
 
   if (matchLimitExceeded(normalized)) {
     return new AppError("LIMIT_EXCEEDED", message, { cause: error });
+  }
+  if (errorCode === "ENOENT") {
+    if (normalized.includes("libreoffice") || normalized.includes("soffice")) {
+      return new AppError("UNSUPPORTED_FEATURE", message, { cause: error });
+    }
+    if (normalized.includes("pdftoppm")) {
+      return new AppError("UNSUPPORTED_FEATURE", message, { cause: error });
+    }
+  }
+  if (normalized.includes("missing dependency")) {
+    if (normalized.includes("libreoffice") || normalized.includes("soffice")) {
+      return new AppError("UNSUPPORTED_FEATURE", message, { cause: error });
+    }
+    if (normalized.includes("pdftoppm")) {
+      return new AppError("UNSUPPORTED_FEATURE", message, { cause: error });
+    }
   }
   if (matchTimeout(normalized, "libreoffice") || matchTimeout(normalized, "soffice")) {
     return new AppError("TIMEOUT_LIBREOFFICE", message, { cause: error });
