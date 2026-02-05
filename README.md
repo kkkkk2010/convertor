@@ -147,7 +147,15 @@ out/
 
 ## Docker
 
+By default, the image installs `libreoffice` and `poppler-utils` versions currently available in Debian bookworm repositories.
+
 Build:
+
+```bash
+docker build -t pptx-importer .
+```
+
+Optional version pinning via build args (the build tries pinned versions first and automatically falls back to the latest repository versions if those pins are unavailable):
 
 ```bash
 docker build -t pptx-importer \
@@ -155,7 +163,6 @@ docker build -t pptx-importer \
   --build-arg POPPLER_UTILS_VERSION=22.12.0-2+deb12u1 \
   .
 ```
-
 Run:
 
 ```bash
