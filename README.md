@@ -172,8 +172,11 @@ docker run --rm -v "$PWD:/work" -w /work pptx-importer \
 
 ### Docker Compose (service)
 
+`docker-compose.yml` starts the converter in HTTP server mode (`node dist/server.js`), not in CLI importer mode.
+
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
 
-The converter is reachable inside the Docker network at `http://converter:3001/convert`.
+Inside the Compose network, set editor `CONVERTER_URL` to `http://converter:3001` and call `POST /convert`.
+The converter is reachable at `http://converter:3001/convert`.

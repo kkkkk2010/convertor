@@ -31,4 +31,4 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-CMD ["node", "dist/importer.js"]
+CMD ["node", "dist/server.js"]
