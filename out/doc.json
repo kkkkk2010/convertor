@@ -1,0 +1,1864 @@
+{
+  "schemaVersion": 1,
+  "slideSize": {
+    "width": 16,
+    "height": 9,
+    "unit": "in"
+  },
+  "slides": [
+    {
+      "id": "s1",
+      "background": {
+        "type": "image",
+        "src": "backgrounds/slide-1.png"
+      },
+      "elements": [
+        {
+          "id": "t1",
+          "type": "text",
+          "x": 709.1750131233596,
+          "y": 257.8249868766404,
+          "width": 248.86246719160107,
+          "height": 32.150026246719165,
+          "rotation": 0,
+          "text": "ТЕХНОЛОГИИ БУДУЩЕГО",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t2",
+          "type": "text",
+          "x": 663.9500262467192,
+          "y": 307.5625196850394,
+          "width": 784.1000524934384,
+          "height": 147.82498687664042,
+          "rotation": 0,
+          "text": "Машинное обучение: от основ до прорывов",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t3",
+          "type": "text",
+          "x": 663.9500262467192,
+          "y": 493.0749606299213,
+          "width": 784.1000524934384,
+          "height": 120.63748031496063,
+          "rotation": 0,
+          "text": "Погрузитесь в мир технологий, которые меняют наше будущее. Узнайте, как машины учатся думать, предсказывать и создавать новое.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "i1",
+          "type": "image",
+          "x": 0,
+          "y": 0,
+          "width": 576,
+          "height": 864,
+          "rotation": 0,
+          "src": "assets/images/slide-1-img-1.png",
+          "objectFit": "cover"
+        },
+        {
+          "id": "i2",
+          "type": "image",
+          "x": 679.0249868766405,
+          "y": 263.84997375328084,
+          "width": 20.10005249343832,
+          "height": 20.10005249343832,
+          "rotation": 0,
+          "src": "assets/images/slide-1-img-2.svg",
+          "objectFit": "cover"
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "background": {
+        "type": "image",
+        "src": "backgrounds/slide-2.png"
+      },
+      "elements": [
+        {
+          "id": "t1",
+          "type": "text",
+          "x": 68.08745406824147,
+          "y": 159.8,
+          "width": 712.0249868766405,
+          "height": 57.21249343832021,
+          "rotation": 0,
+          "text": "Что такое машинное обучение?",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t2",
+          "type": "text",
+          "x": 87.53753280839895,
+          "y": 265.6374803149606,
+          "width": 228.90005249343832,
+          "height": 28.6,
+          "rotation": 0,
+          "text": "Суть технологии",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t3",
+          "type": "text",
+          "x": 87.53753280839895,
+          "y": 305.90005249343835,
+          "width": 363.28745406824146,
+          "height": 217.96251968503935,
+          "rotation": 0,
+          "text": "Машинное обучение — это автоматизация анализа данных и принятия решений на основе опыта. Компьютеры учатся распознавать паттерны и делать прогнозы без явного программирования каждого шага.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t4",
+          "type": "text",
+          "x": 509.1750131233596,
+          "y": 265.6374803149606,
+          "width": 363.28745406824146,
+          "height": 57.2,
+          "rotation": 0,
+          "text": "Отличие от традиционного программирования",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t5",
+          "type": "text",
+          "x": 509.1750131233596,
+          "y": 334.5000524934383,
+          "width": 363.28745406824146,
+          "height": 155.68745406824146,
+          "rotation": 0,
+          "text": "Вместо жёсткого программирования правил мы обучаем модели на данных. Система сама находит закономерности и учится принимать решения.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t6",
+          "type": "text",
+          "x": 87.53753280839895,
+          "y": 582.2124934383203,
+          "width": 228.90005249343832,
+          "height": 28.6,
+          "rotation": 0,
+          "text": "Примеры в жизни",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t7",
+          "type": "text",
+          "x": 87.53753280839895,
+          "y": 622.4749606299213,
+          "width": 784.9250393700788,
+          "height": 62.27496062992126,
+          "rotation": 0,
+          "text": "Распознавание лиц в смартфонах, персональные рекомендации Netflix и Spotify, автономное вождение Tesla — всё это результат машинного обучения.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "i1",
+          "type": "image",
+          "x": 960,
+          "y": 0,
+          "width": 576,
+          "height": 864,
+          "rotation": 0,
+          "src": "assets/images/slide-2-img-1.png",
+          "objectFit": "cover"
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "background": {
+        "type": "image",
+        "src": "backgrounds/slide-3.png"
+      },
+      "elements": [
+        {
+          "id": "t1",
+          "type": "text",
+          "x": 652.8374803149607,
+          "y": 158.44997375328086,
+          "width": 77.04997375328084,
+          "height": 24,
+          "rotation": 0,
+          "text": "ВВЕДЕНИЕ",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t2",
+          "type": "text",
+          "x": 641.6,
+          "y": 195.55002624671914,
+          "width": 685.9625196850393,
+          "height": 55.12503937007874,
+          "rotation": 0,
+          "text": "Что такое машинное обучение?",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t3",
+          "type": "text",
+          "x": 641.6,
+          "y": 278.7875065616798,
+          "width": 828.8,
+          "height": 90,
+          "rotation": 0,
+          "text": "Машинное обучение — это революционный подход к созданию интеллектуальных систем, где компьютеры учатся решать задачи не через явное программирование правил, а через анализ данных и выявление закономерностей.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t4",
+          "type": "text",
+          "x": 660.3375328083989,
+          "y": 408.6124934383202,
+          "width": 259.16251968503934,
+          "height": 27.56251968503937,
+          "rotation": 0,
+          "text": "Автоматизация анализа",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t5",
+          "type": "text",
+          "x": 660.3375328083989,
+          "y": 447.4124934383202,
+          "width": 367.55002624671914,
+          "height": 120,
+          "rotation": 0,
+          "text": "Системы обрабатывают огромные объемы данных и извлекают из них ценные инсайты без явного программирования",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t6",
+          "type": "text",
+          "x": 1084.0999475065616,
+          "y": 408.6124934383202,
+          "width": 220.52503937007876,
+          "height": 27.56251968503937,
+          "rotation": 0,
+          "text": "Обучение на опыте",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t7",
+          "type": "text",
+          "x": 1084.0999475065616,
+          "y": 447.4124934383202,
+          "width": 367.5625196850394,
+          "height": 120,
+          "rotation": 0,
+          "text": "Модели улучшают свою производительность через итеративный анализ данных и выявление закономерностей",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t8",
+          "type": "text",
+          "x": 660.3375328083989,
+          "y": 623.6249868766404,
+          "width": 248.2,
+          "height": 27.56251968503937,
+          "rotation": 0,
+          "text": "Реальные применения",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t9",
+          "type": "text",
+          "x": 660.3375328083989,
+          "y": 662.4249868766404,
+          "width": 791.3250393700788,
+          "height": 30,
+          "rotation": 0,
+          "text": "От распознавания лиц до автопилота Tesla — ML меняет нашу повседневную жизнь",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "i1",
+          "type": "image",
+          "x": 0,
+          "y": 0,
+          "width": 576,
+          "height": 864,
+          "rotation": 0,
+          "src": "assets/images/slide-3-img-1.png",
+          "objectFit": "cover"
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "background": {
+        "type": "image",
+        "src": "backgrounds/slide-4.png"
+      },
+      "elements": [
+        {
+          "id": "t1",
+          "type": "text",
+          "x": 130.11254593175852,
+          "y": 340.0749606299213,
+          "width": 77.24997375328084,
+          "height": 28,
+          "rotation": 0,
+          "text": "ОСНОВЫ",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t2",
+          "type": "text",
+          "x": 117,
+          "y": 383.3625196850394,
+          "width": 800.2874540682415,
+          "height": 64.32503937007874,
+          "rotation": 0,
+          "text": "Что такое машинное обучение?",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t3",
+          "type": "text",
+          "x": 117,
+          "y": 480.48745406824145,
+          "width": 1301.9875065616798,
+          "height": 70,
+          "rotation": 0,
+          "text": "Машинное обучение — это раздел искусственного интеллекта, позволяющий компьютерам автоматически улучшать свою производительность через опыт, без явного программирования каждого правила.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t4",
+          "type": "text",
+          "x": 138.86246719160104,
+          "y": 596.9500262467192,
+          "width": 263.12503937007875,
+          "height": 32.150026246719165,
+          "rotation": 0,
+          "text": "Обучение на данных",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t5",
+          "type": "text",
+          "x": 138.86246719160104,
+          "y": 642.2124934383203,
+          "width": 375.6874540682415,
+          "height": 140,
+          "rotation": 0,
+          "text": "Модели анализируют примеры и извлекают закономерности вместо следования жёстким инструкциям",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t6",
+          "type": "text",
+          "x": 580.1375328083989,
+          "y": 596.9500262467192,
+          "width": 316.3625196850394,
+          "height": 32.150026246719165,
+          "rotation": 0,
+          "text": "Автоматизация решений",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t7",
+          "type": "text",
+          "x": 580.1375328083989,
+          "y": 642.2124934383203,
+          "width": 375.7000524934383,
+          "height": 105,
+          "rotation": 0,
+          "text": "Системы самостоятельно принимают решения на основе накопленного опыта и паттернов",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t8",
+          "type": "text",
+          "x": 1021.4249868766403,
+          "y": 596.9500262467192,
+          "width": 322.71254593175854,
+          "height": 32.150026246719165,
+          "rotation": 0,
+          "text": "Непрерывное улучшение",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t9",
+          "type": "text",
+          "x": 1021.4249868766403,
+          "y": 642.2124934383203,
+          "width": 375.7000524934383,
+          "height": 105,
+          "rotation": 0,
+          "text": "Модели становятся точнее с каждым новым примером и опытом взаимодействия",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "i1",
+          "type": "image",
+          "x": 0,
+          "y": 0,
+          "width": 1536,
+          "height": 273.3875065616798,
+          "rotation": 0,
+          "src": "assets/images/slide-4-img-1.png",
+          "objectFit": "cover"
+        }
+      ]
+    },
+    {
+      "id": "s5",
+      "background": {
+        "type": "image",
+        "src": "backgrounds/slide-5.png"
+      },
+      "elements": [
+        {
+          "id": "t1",
+          "type": "text",
+          "x": 199.31254593175854,
+          "y": 334.37501312335957,
+          "width": 68.84997375328084,
+          "height": 24.950026246719162,
+          "rotation": 0,
+          "text": "ОСНОВЫ",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t2",
+          "type": "text",
+          "x": 187.62498687664043,
+          "y": 372.9500262467192,
+          "width": 713.3750131233596,
+          "height": 57.337532808398954,
+          "rotation": 0,
+          "text": "Что такое машинное обучение?",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t3",
+          "type": "text",
+          "x": 187.62498687664043,
+          "y": 459.52503937007873,
+          "width": 1160.7500262467192,
+          "height": 93.6,
+          "rotation": 0,
+          "text": "Машинное обучение — это подход к искусственному интеллекту, который позволяет компьютерным системам автоматически улучшать свою производительность через опыт. Вместо того чтобы явно программировать каждое правило, мы обучаем модели на данных, позволяя им самостоятельно находить закономерности.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t4",
+          "type": "text",
+          "x": 207.11254593175852,
+          "y": 594.537532808399,
+          "width": 269.59999999999997,
+          "height": 28.66246719160105,
+          "rotation": 0,
+          "text": "Автоматизация анализа",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t5",
+          "type": "text",
+          "x": 207.11254593175852,
+          "y": 634.8874540682415,
+          "width": 334.9500262467192,
+          "height": 124.80000000000001,
+          "rotation": 0,
+          "text": "Системы учатся анализировать данные и принимать решения без явного программирования каждого шага",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t6",
+          "type": "text",
+          "x": 600.5250393700787,
+          "y": 594.537532808399,
+          "width": 229.38750656167977,
+          "height": 28.66246719160105,
+          "rotation": 0,
+          "text": "Обучение на опыте",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t7",
+          "type": "text",
+          "x": 600.5250393700787,
+          "y": 634.8874540682415,
+          "width": 334.9500262467192,
+          "height": 93.6,
+          "rotation": 0,
+          "text": "Модели улучшают свою точность, обрабатывая всё больше примеров и данных",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t8",
+          "type": "text",
+          "x": 993.9375328083989,
+          "y": 594.537532808399,
+          "width": 304.28745406824146,
+          "height": 28.66246719160105,
+          "rotation": 0,
+          "text": "Практическое применение",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t9",
+          "type": "text",
+          "x": 993.9375328083989,
+          "y": 634.8874540682415,
+          "width": 334.9500262467192,
+          "height": 124.80000000000001,
+          "rotation": 0,
+          "text": "От распознавания лиц до автономных автомобилей и персонализированных рекомендаций",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "i1",
+          "type": "image",
+          "x": 0,
+          "y": 0,
+          "width": 1536,
+          "height": 243.72503937007878,
+          "rotation": 0,
+          "src": "assets/images/slide-5-img-1.png",
+          "objectFit": "cover"
+        }
+      ]
+    },
+    {
+      "id": "s6",
+      "background": {
+        "type": "image",
+        "src": "backgrounds/slide-6.png"
+      },
+      "elements": [
+        {
+          "id": "t1",
+          "type": "text",
+          "x": 655.5875065616798,
+          "y": 148.76251968503936,
+          "width": 68.57501312335958,
+          "height": 24.84997375328084,
+          "rotation": 0,
+          "text": "ОСНОВЫ",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t2",
+          "type": "text",
+          "x": 643.9500262467191,
+          "y": 187.18750656167978,
+          "width": 710.462467191601,
+          "height": 57.10005249343831,
+          "rotation": 0,
+          "text": "Что такое машинное обучение?",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t3",
+          "type": "text",
+          "x": 643.9500262467191,
+          "y": 273.40000000000003,
+          "width": 824.1000524934384,
+          "height": 124.19999999999999,
+          "rotation": 0,
+          "text": "Машинное обучение — это революционный подход к решению задач, при котором компьютер самостоятельно находит закономерности в данных, а не следует жёстко заданным правилам. Вместо программирования каждого шага, мы обучаем модели распознавать паттерны и делать выводы.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t4",
+          "type": "text",
+          "x": 663.3625196850394,
+          "y": 438.8499737532808,
+          "width": 268.57501312335955,
+          "height": 28.53753280839895,
+          "rotation": 0,
+          "text": "Автоматизация анализа",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t5",
+          "type": "text",
+          "x": 663.3625196850394,
+          "y": 479.02498687664047,
+          "width": 363.51254593175855,
+          "height": 93.15002624671916,
+          "rotation": 0,
+          "text": "Системы обучаются на примерах и самостоятельно выявляют закономерности в данных",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t6",
+          "type": "text",
+          "x": 1085.1125459317586,
+          "y": 438.8499737532808,
+          "width": 228.4124934383202,
+          "height": 28.53753280839895,
+          "rotation": 0,
+          "text": "Обучение на опыте",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t7",
+          "type": "text",
+          "x": 1085.1125459317586,
+          "y": 479.02498687664047,
+          "width": 363.52503937007873,
+          "height": 62.10005249343832,
+          "rotation": 0,
+          "text": "Модели улучшают свою точность по мере получения новых данных",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t8",
+          "type": "text",
+          "x": 663.3625196850394,
+          "y": 630.4124934383202,
+          "width": 303.12503937007875,
+          "height": 28.53753280839895,
+          "rotation": 0,
+          "text": "Практическое применение",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t9",
+          "type": "text",
+          "x": 663.3625196850394,
+          "y": 670.5875065616798,
+          "width": 785.2749606299212,
+          "height": 31.049973753280838,
+          "rotation": 0,
+          "text": "От распознавания лиц до медицинской диагностики и автономного вождения",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "i1",
+          "type": "image",
+          "x": 0,
+          "y": 0,
+          "width": 576,
+          "height": 864,
+          "rotation": 0,
+          "src": "assets/images/slide-6-img-1.png",
+          "objectFit": "cover"
+        }
+      ]
+    },
+    {
+      "id": "s7",
+      "background": {
+        "type": "image",
+        "src": "backgrounds/slide-7.png"
+      },
+      "elements": [
+        {
+          "id": "t1",
+          "type": "text",
+          "x": 204.06246719160106,
+          "y": 344.8,
+          "width": 71.22498687664041,
+          "height": 25.81249343832021,
+          "rotation": 0,
+          "text": "ОСНОВЫ",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t2",
+          "type": "text",
+          "x": 167.7875065616798,
+          "y": 384.71254593175854,
+          "width": 737.8749606299212,
+          "height": 59.312545931758535,
+          "rotation": 0,
+          "text": "Что такое машинное обучение?",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t3",
+          "type": "text",
+          "x": 167.7875065616798,
+          "y": 474.2624671916011,
+          "width": 1200.4124934383203,
+          "height": 129,
+          "rotation": 0,
+          "text": "Машинное обучение — это направление искусственного интеллекта, которое позволяет компьютерным системам автоматически улучшать свою производительность через анализ данных и накопленный опыт. В отличие от традиционного программирования, где разработчик явно прописывает все правила и логику, машинное обучение позволяет моделям самостоятельно обнаруживать закономерности и принимать решения.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t4",
+          "type": "text",
+          "x": 197.55002624671917,
+          "y": 648.5000524934384,
+          "width": 237.23748031496064,
+          "height": 29.64997375328084,
+          "rotation": 0,
+          "text": "Распознавание лиц",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t5",
+          "type": "text",
+          "x": 197.55002624671917,
+          "y": 690.2374803149606,
+          "width": 334.3625196850394,
+          "height": 64.50005249343832,
+          "rotation": 0,
+          "text": "Разблокировка смартфонов и системы безопасности",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t6",
+          "type": "text",
+          "x": 604.4,
+          "y": 648.5000524934384,
+          "width": 328.7500262467192,
+          "height": 29.64997375328084,
+          "rotation": 0,
+          "text": "Рекомендательные системы",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t7",
+          "type": "text",
+          "x": 604.4,
+          "y": 690.2374803149606,
+          "width": 334.37501312335957,
+          "height": 64.50005249343832,
+          "rotation": 0,
+          "text": "Netflix подбирает фильмы на основе ваших предпочтений",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t8",
+          "type": "text",
+          "x": 1011.262467191601,
+          "y": 648.5000524934384,
+          "width": 264.62498687664043,
+          "height": 29.64997375328084,
+          "rotation": 0,
+          "text": "Автономное вождение",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t9",
+          "type": "text",
+          "x": 1011.262467191601,
+          "y": 690.2374803149606,
+          "width": 334.37501312335957,
+          "height": 64.50005249343832,
+          "rotation": 0,
+          "text": "Автопилот Tesla анализирует дорожную обстановку",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "i1",
+          "type": "image",
+          "x": 0,
+          "y": 0,
+          "width": 1536,
+          "height": 252.06246719160106,
+          "rotation": 0,
+          "src": "assets/images/slide-7-img-1.png",
+          "objectFit": "cover"
+        },
+        {
+          "id": "i2",
+          "type": "image",
+          "x": 179.87496062992128,
+          "y": 349.6374803149606,
+          "width": 16.125039370078742,
+          "height": 16.125039370078742,
+          "rotation": 0,
+          "src": "assets/images/slide-7-img-2.svg",
+          "objectFit": "cover"
+        }
+      ]
+    },
+    {
+      "id": "s8",
+      "background": {
+        "type": "image",
+        "src": "backgrounds/slide-8.png"
+      },
+      "elements": [
+        {
+          "id": "t1",
+          "type": "text",
+          "x": 188.06246719160106,
+          "y": 309.1875065616798,
+          "width": 70.23748031496064,
+          "height": 25.449973753280844,
+          "rotation": 0,
+          "text": "ОСНОВЫ",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t2",
+          "type": "text",
+          "x": 176.13753280839896,
+          "y": 348.55002624671914,
+          "width": 846.0999475065616,
+          "height": 58.47496062992126,
+          "rotation": 0,
+          "text": "Четыре столпа машинного обучения",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t3",
+          "type": "text",
+          "x": 196.01249343832023,
+          "y": 456.7250393700787,
+          "width": 233.9250393700787,
+          "height": 29.22498687664042,
+          "rotation": 0,
+          "text": "Прогнозирование",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t4",
+          "type": "text",
+          "x": 196.01249343832023,
+          "y": 497.87496062992125,
+          "width": 542.1625196850393,
+          "height": 95.43748031496062,
+          "rotation": 0,
+          "text": "Предсказание будущих событий и трендов на основе исторических данных — от погоды до финансовых рынков",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t5",
+          "type": "text",
+          "x": 797.8,
+          "y": 456.7250393700787,
+          "width": 233.9250393700787,
+          "height": 29.22498687664042,
+          "rotation": 0,
+          "text": "Принятие решений",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t6",
+          "type": "text",
+          "x": 797.8,
+          "y": 497.87496062992125,
+          "width": 542.1750131233596,
+          "height": 63.62498687664042,
+          "rotation": 0,
+          "text": "Оптимизация сложных действий и стратегий в условиях неопределенности и множества параметров",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t7",
+          "type": "text",
+          "x": 196.01249343832023,
+          "y": 652.9375328083989,
+          "width": 233.9250393700787,
+          "height": 29.22498687664042,
+          "rotation": 0,
+          "text": "Открытие",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t8",
+          "type": "text",
+          "x": 196.01249343832023,
+          "y": 694.0874540682415,
+          "width": 542.1625196850393,
+          "height": 63.62498687664042,
+          "rotation": 0,
+          "text": "Выявление скрытых закономерностей, аномалий и структур в больших массивах данных",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t9",
+          "type": "text",
+          "x": 797.8,
+          "y": 652.9375328083989,
+          "width": 233.9250393700787,
+          "height": 29.22498687664042,
+          "rotation": 0,
+          "text": "Генерация",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t10",
+          "type": "text",
+          "x": 797.8,
+          "y": 694.0874540682415,
+          "width": 542.1750131233596,
+          "height": 95.43748031496062,
+          "rotation": 0,
+          "text": "Создание совершенно новых данных: текстов, изображений, музыки с помощью генеративных моделей",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "i1",
+          "type": "image",
+          "x": 0,
+          "y": 0,
+          "width": 1536,
+          "height": 248.55002624671917,
+          "rotation": 0,
+          "src": "assets/images/slide-8-img-1.png",
+          "objectFit": "cover"
+        }
+      ]
+    },
+    {
+      "id": "s9",
+      "background": {
+        "type": "image",
+        "src": "backgrounds/slide-9.png"
+      },
+      "elements": [
+        {
+          "id": "t1",
+          "type": "text",
+          "x": 139.03748031496062,
+          "y": 83.81249343832022,
+          "width": 131.87496062992128,
+          "height": 27.637480314960634,
+          "rotation": 0,
+          "text": "МЕТОДОЛОГИЯ",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t2",
+          "type": "text",
+          "x": 125.28745406824147,
+          "y": 127.35002624671915,
+          "width": 644.6749606299213,
+          "height": 63.512545931758524,
+          "rotation": 0,
+          "text": "Основные типы обучения",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t3",
+          "type": "text",
+          "x": 125.28745406824147,
+          "y": 223.2499737532808,
+          "width": 1285.41249343832,
+          "height": 69.07496062992126,
+          "rotation": 0,
+          "text": "Машинное обучение классифицируется на несколько ключевых подходов в зависимости от наличия разметки данных и способа взаимодействия модели с окружением.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t4",
+          "type": "text",
+          "x": 254.83748031496063,
+          "y": 338.2,
+          "width": 266.0499737532808,
+          "height": 31.750026246719163,
+          "rotation": 0,
+          "text": "Обучение с учителем",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t5",
+          "type": "text",
+          "x": 254.83748031496063,
+          "y": 382.8999475065617,
+          "width": 1155.8624671916011,
+          "height": 69.07496062992126,
+          "rotation": 0,
+          "text": "Модели обучаются на размеченных данных с известными правильными ответами. Применяется для задач классификации (например, определение спама) и регрессии (прогноз цен на недвижимость).",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t6",
+          "type": "text",
+          "x": 254.83748031496063,
+          "y": 495.1500262467191,
+          "width": 276.7000524934383,
+          "height": 31.750026246719163,
+          "rotation": 0,
+          "text": "Обучение без учителя",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t7",
+          "type": "text",
+          "x": 254.83748031496063,
+          "y": 539.8499737532809,
+          "width": 1155.8624671916011,
+          "height": 69.07496062992126,
+          "rotation": 0,
+          "text": "Алгоритмы самостоятельно ищут скрытые паттерны и структуры в неразмеченных данных. Используется для кластеризации клиентов, снижения размерности и обнаружения аномалий.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t8",
+          "type": "text",
+          "x": 254.83748031496063,
+          "y": 652.1000524934383,
+          "width": 346.32503937007874,
+          "height": 31.750026246719163,
+          "rotation": 0,
+          "text": "Обучение с подкреплением",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t9",
+          "type": "text",
+          "x": 254.83748031496063,
+          "y": 696.8000000000001,
+          "width": 1155.8624671916011,
+          "height": 69.07496062992126,
+          "rotation": 0,
+          "text": "Модель учится через взаимодействие с окружением, получая награды за успешные действия. Применяется в играх, робототехнике и управлении автономными системами.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "i1",
+          "type": "image",
+          "x": 125.28745406824147,
+          "y": 316.61249343832026,
+          "width": 107.96251968503935,
+          "height": 156.95002624671915,
+          "rotation": 0,
+          "src": "assets/images/slide-9-img-1.png",
+          "objectFit": "cover"
+        },
+        {
+          "id": "i2",
+          "type": "image",
+          "x": 125.28745406824147,
+          "y": 473.56251968503943,
+          "width": 107.96251968503935,
+          "height": 156.95002624671915,
+          "rotation": 0,
+          "src": "assets/images/slide-9-img-2.png",
+          "objectFit": "cover"
+        },
+        {
+          "id": "i3",
+          "type": "image",
+          "x": 125.28745406824147,
+          "y": 630.5125459317585,
+          "width": 107.96251968503935,
+          "height": 156.95002624671915,
+          "rotation": 0,
+          "src": "assets/images/slide-9-img-3.png",
+          "objectFit": "cover"
+        }
+      ]
+    },
+    {
+      "id": "s10",
+      "background": {
+        "type": "image",
+        "src": "backgrounds/slide-10.png"
+      },
+      "elements": [
+        {
+          "id": "t1",
+          "type": "text",
+          "x": 157.35002624671915,
+          "y": 75.53753280839895,
+          "width": 729.5000524934384,
+          "height": 60.337532808398954,
+          "rotation": 0,
+          "text": "Легенды машинного обучения",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t2",
+          "type": "text",
+          "x": 157.35002624671915,
+          "y": 483.4999475065617,
+          "width": 241.35002624671915,
+          "height": 30.16251968503937,
+          "rotation": 0,
+          "text": "Джеффри Хинтон",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t3",
+          "type": "text",
+          "x": 157.35002624671915,
+          "y": 525.9625196850394,
+          "width": 286.08745406824147,
+          "height": 262.5000524934383,
+          "rotation": 0,
+          "text": "«Отец глубокого обучения», лауреат премии Тьюринга. Его революционные исследования нейронных сетей и алгоритма обратного распространения ошибки заложили основу современного AI.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t4",
+          "type": "text",
+          "x": 469.0749606299213,
+          "y": 483.5125459317585,
+          "width": 241.35002624671915,
+          "height": 30.16251968503937,
+          "rotation": 0,
+          "text": "Ян Лекун",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t5",
+          "type": "text",
+          "x": 469.0749606299213,
+          "y": 525.9750131233595,
+          "width": 286.1000524934383,
+          "height": 196.87496062992125,
+          "rotation": 0,
+          "text": "Создатель сверточных нейронных сетей (CNN), которые стали стандартом в компьютерном зрении. Главный специалист по AI в Meta.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t6",
+          "type": "text",
+          "x": 780.8124934383202,
+          "y": 483.4999475065617,
+          "width": 241.35002624671915,
+          "height": 30.16251968503937,
+          "rotation": 0,
+          "text": "Йошуа Бенджио",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t7",
+          "type": "text",
+          "x": 780.8124934383202,
+          "y": 525.9625196850394,
+          "width": 286.08745406824147,
+          "height": 196.87496062992125,
+          "rotation": 0,
+          "text": "Пионер глубокого обучения и архитектур внимания. Его работы по обработке последовательностей легли в основу современных языковых моделей.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t8",
+          "type": "text",
+          "x": 1092.537532808399,
+          "y": 483.5125459317585,
+          "width": 241.35002624671915,
+          "height": 30.16251968503937,
+          "rotation": 0,
+          "text": "Джон Маккарти",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "t9",
+          "type": "text",
+          "x": 1092.537532808399,
+          "y": 525.9750131233595,
+          "width": 286.1000524934383,
+          "height": 196.87496062992125,
+          "rotation": 0,
+          "text": "Создатель термина «искусственный интеллект» в 1956 году, разработчик языка программирования Lisp, один из основателей области AI.",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 28,
+            "color": "#111111",
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "align": "left"
+          }
+        },
+        {
+          "id": "i1",
+          "type": "image",
+          "x": 157.35002624671915,
+          "y": 176.90005249343832,
+          "width": 286.08745406824147,
+          "height": 286.08745406824147,
+          "rotation": 0,
+          "src": "assets/images/slide-10-img-1.png",
+          "objectFit": "cover"
+        },
+        {
+          "id": "i2",
+          "type": "image",
+          "x": 469.0749606299213,
+          "y": 176.90005249343832,
+          "width": 286.1000524934383,
+          "height": 286.0999475065617,
+          "rotation": 0,
+          "src": "assets/images/slide-10-img-2.png",
+          "objectFit": "cover"
+        },
+        {
+          "id": "i3",
+          "type": "image",
+          "x": 780.8124934383202,
+          "y": 176.90005249343832,
+          "width": 286.08745406824147,
+          "height": 286.08745406824147,
+          "rotation": 0,
+          "src": "assets/images/slide-10-img-3.png",
+          "objectFit": "cover"
+        },
+        {
+          "id": "i4",
+          "type": "image",
+          "x": 1092.537532808399,
+          "y": 176.90005249343832,
+          "width": 286.1000524934383,
+          "height": 286.0999475065617,
+          "rotation": 0,
+          "src": "assets/images/slide-10-img-4.png",
+          "objectFit": "cover"
+        }
+      ]
+    }
+  ]
+}

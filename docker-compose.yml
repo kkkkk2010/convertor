@@ -1,0 +1,19 @@
+version: "3.9"
+
+services:
+  converter:
+    build: .
+    command: ["node", "dist/server.js"]
+    environment:
+      PPTX_IMPORTER_PORT: "3001"
+      PPTX_IMPORTER_MAX_CONCURRENT: "2"
+      PPTX_IMPORTER_MAX_QUEUE: "10"
+      PPTX_IMPORTER_QUEUE_WAIT_TIMEOUT_MS: "120000"
+      PPTX_MAX_INPUT_BYTES: "52428800"
+      PPTX_MAX_ZIP_ENTRIES: "5000"
+      PPTX_MAX_UNCOMPRESSED_BYTES: "209715200"
+      PPTX_MAX_FILE_UNCOMPRESSED_BYTES: "52428800"
+      PPTX_LIBREOFFICE_TIMEOUT_MS: "120000"
+      PPTX_PDFTOPPM_TIMEOUT_MS: "120000"
+    expose:
+      - "3001"
